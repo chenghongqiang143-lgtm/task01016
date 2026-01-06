@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ListTodo, LayoutGrid, ClipboardCheck, Settings, BarChart2, CalendarDays, RotateCcw, Loader2, Star, TrendingUp } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
@@ -15,7 +14,12 @@ import { RatingView } from './views/RatingView';
 import { TaskStatsModal } from './components/TaskStatsModal';
 import { RatingStatsModal } from './components/RatingStatsModal';
 
-export default function App() {
+// 最小加载时间 (ms)，防止闪屏
+const MIN_LOADING_TIME = 800;
+// 加载超时时间 (ms)，防止卡死
+const LOADING_TIMEOUT = 5000;
+
+export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('arrange');
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -31,34 +35,75 @@ export default function App() {
 
   // 初始化加载数据
   useEffect(() => {
+    let isMounted = true;
+    const startTime = Date.now();
+
     const init = async () => {
       try {
-        const loaded = loadState();
-        if (loaded.rolloverSettings?.enabled) {
-          const today = new Date();
-          const todayStr = formatDate(today);
-          let hasChanges = false;
-          const updatedTodos = loaded.todos.map(todo => {
-            if (!todo.isCompleted && todo.startDate && todo.startDate < todayStr) {
-              const startDate = new Date(todo.startDate);
-              const diffDays = differenceInCalendarDays(today, startDate);
-              if (diffDays <= (loaded.rolloverSettings?.maxDays || 3)) {
-                hasChanges = true;
-                return { ...todo, startDate: todayStr };
-              }
+        // 创建数据加载Promise
+        const dataPromise = new Promise<AppState>((resolve) => {
+            const loaded = loadState();
+            // 处理待办顺延逻辑
+            if (loaded.rolloverSettings?.enabled) {
+              const today = new Date();
+              const todayStr = formatDate(today);
+              let hasChanges = false;
+              const updatedTodos = loaded.todos.map(todo => {
+                if (!todo.isCompleted && todo.startDate && todo.startDate < todayStr) {
+                  const startDate = new Date(todo.startDate);
+                  const diffDays = differenceInCalendarDays(today, startDate);
+                  if (diffDays <= (loaded.rolloverSettings?.maxDays || 3)) {
+                    hasChanges = true;
+                    return { ...todo, startDate: todayStr };
+                  }
+                }
+                return todo;
+              });
+              if (hasChanges) loaded.todos = updatedTodos;
             }
-            return todo;
-          });
-          if (hasChanges) loaded.todos = updatedTodos;
+            resolve(loaded);
+        });
+
+        // 创建最小等待时间Promise
+        const minWaitPromise = new Promise(resolve => setTimeout(resolve, MIN_LOADING_TIME));
+
+        // 创建超时Promise
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), LOADING_TIMEOUT));
+
+        // 竞速：数据加载 vs 超时，同时等待最小时间
+        // 这里我们要等待 (数据加载完成) 和 (最小时间) 都满足，或者 (超时) 发生
+        const [loadedData] = await Promise.all([
+           Promise.race([dataPromise, timeoutPromise]),
+           minWaitPromise
+        ]);
+
+        if (isMounted) {
+            if (loadedData) {
+                setState(loadedData);
+            } else {
+                console.warn("Loading timed out or failed, using initial state");
+                setState(getInitialState());
+            }
+            setIsLoaded(true);
+            // 移除 index.html 中的骨架屏（如果存在）
+            const shell = document.getElementById('initial-loader');
+            if (shell) {
+                shell.style.opacity = '0';
+                setTimeout(() => shell.remove(), 400);
+            }
         }
-        setState(loaded);
       } catch (err) {
         console.error("Initial load error:", err);
-      } finally {
-        setTimeout(() => setIsLoaded(true), 150);
+        if (isMounted) {
+            setState(getInitialState());
+            setIsLoaded(true);
+        }
       }
     };
+
     init();
+    
+    return () => { isMounted = false; };
   }, []);
 
   // 状态保存持久化
@@ -92,9 +137,11 @@ export default function App() {
   }, [state?.records, dateKey]);
 
   if (!state || !isLoaded) {
+    // 即使有 index.html 的骨架屏，React 挂载后也保持一个加载状态作为双重保障
     return (
-      <div className="h-screen w-screen flex flex-col items-center justify-center bg-white space-y-4">
-        <Loader2 className="w-10 h-10 text-stone-200 animate-spin" />
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-stone-50 space-y-4">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">LOADING</span>
       </div>
     );
   }
