@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Task, DayData, Objective, HOURS, RolloverSettings } from '../types';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { ObjectiveEditorModal } from '../components/ObjectiveEditorModal';
-import { Plus, ArrowUp, ArrowDown, Edit2, Check, Download, Upload, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson } from 'lucide-react';
+import { Plus, ArrowUp, ArrowDown, Edit2, Check, Download, Upload, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson, Layers } from 'lucide-react';
 import { cn, formatDate } from '../utils';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -89,6 +89,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     });
   }, [objectives, categoryOrder]);
 
+  const uncategorizedTasks = useMemo(() => {
+      return tasks.filter(t => !t.category || t.category === 'none' || t.category === 'uncategorized' || !objectives.find(o => o.id === t.category));
+  }, [tasks, objectives]);
+
   const moveObjective = (index: number, direction: 'up' | 'down') => {
     const newOrder = [...sortedObjectives.map(o => o.id)];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -112,6 +116,47 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
   // Section title class updated for larger size (text-lg)
   const sectionTitleClass = "text-lg font-black text-stone-900 uppercase tracking-tight leading-none";
+
+  const renderTaskItem = (task: Task) => {
+    const currentVal = taskProgress[task.id] || 0;
+    const target = task.targets;
+    const dailyTarget = target ? (target.value / target.frequency) : 0;
+    const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
+    const isCompleted = progress >= 100;
+
+    return (
+        <div 
+            key={task.id} 
+            onClick={() => { setEditingTask(task); setIsTaskModalOpen(true); }} 
+            className={cn(blockClass, "bg-white border-stone-100/60")}
+        >
+            <div 
+                className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0"
+                style={{ 
+                    width: `${progress}%`, 
+                    backgroundColor: `${task.color}10`
+                }}
+            />
+
+            <div className="flex items-center gap-2 truncate relative z-10 flex-1 min-w-0">
+                <div className="w-1.5 h-1.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: task.color }} />
+                <span className={titleClass}>{task.name}</span>
+            </div>
+            <div className="relative z-10 flex items-center gap-1 shrink-0 ml-1">
+                {isCompleted ? (
+                    <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                        <Check size={10} strokeWidth={4} />
+                    </div>
+                ) : dailyTarget > 0 && (
+                    <span className="text-[8px] font-black text-stone-300 tabular-nums">
+                        {Math.round(progress)}%
+                    </span>
+                )}
+                <Edit2 size={10} className="text-stone-300 group-hover:text-stone-900 transition-colors ml-0.5" />
+            </div>
+        </div>
+    );
+  };
 
   return (
     <div className="h-full bg-stone-50 overflow-y-auto custom-scrollbar relative">
@@ -170,106 +215,86 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
            </div>
         </section>
 
-        {/* 领域分类管理 */}
+        {/* 统一的 领域与行为库 管理 */}
         <section className="space-y-4">
            <div className="flex justify-between items-end px-1">
-             <h3 className={sectionTitleClass}>分类编辑</h3>
-             <button onClick={() => { setEditingObjective(null); setIsObjModalOpen(true); }} className="p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-90">
-                <Plus size={16} />
+             <h3 className={sectionTitleClass}>领域与行为库</h3>
+             <button 
+                onClick={() => { setEditingObjective(null); setIsObjModalOpen(true); }} 
+                className="p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-90 flex items-center gap-1.5"
+             >
+                <Plus size={16} /> <span className="text-[10px] font-bold pr-1">新分类</span>
              </button>
            </div>
 
-           <div className="grid grid-cols-2 gap-3">
-              {sortedObjectives.map((obj, idx) => (
-                <div 
-                    key={obj.id} 
-                    className={cn(blockClass, "hover:bg-stone-50")}
-                    onClick={() => { setEditingObjective(obj); setIsObjModalOpen(true); }}
-                >
-                   <div className="flex items-center gap-3 min-w-0 flex-1 relative z-10">
-                      <div className="w-2 h-2 rounded-full shrink-0 shadow-inner" style={{ backgroundColor: obj.color }} />
-                      <div className="flex flex-col min-w-0">
-                         <h4 className={titleClass}>{obj.title}</h4>
-                      </div>
-                   </div>
-                   
-                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all relative z-10 shrink-0">
-                      <button onClick={(e) => { e.stopPropagation(); moveObjective(idx, 'up'); }} className="p-1.5 text-stone-300 hover:text-stone-900 transition-colors">
-                        <ArrowUp size={12} />
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); moveObjective(idx, 'down'); }} className="p-1.5 text-stone-300 hover:text-stone-900 transition-colors">
-                        <ArrowDown size={12} />
-                      </button>
-                   </div>
-                </div>
-              ))}
-           </div>
-        </section>
-
-        {/* 行为模板管理 */}
-        <section className="space-y-4">
-           <div className="flex justify-between items-end px-1">
-             <h3 className={sectionTitleClass}>行为模板管理</h3>
-             <button onClick={() => { setEditingTask(null); setIsTaskModalOpen(true); }} className="p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 transition-all shadow-lg active:scale-90">
-                <Plus size={16} />
-             </button>
-           </div>
-
-           <div className="space-y-4">
-              {sortedObjectives.map(obj => {
-                const filteredTasks = tasks.filter(t => t.category === obj.id);
-                if (filteredTasks.length === 0) return null;
+           <div className="space-y-6">
+              {/* Categorized Tasks */}
+              {sortedObjectives.map((obj, idx) => {
+                const categoryTasks = tasks.filter(t => t.category === obj.id);
                 return (
-                  <div key={obj.id} className="space-y-2.5">
-                    <div className="flex items-center gap-3 px-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">{obj.title}</span>
-                        <div className="h-px flex-1 bg-stone-100" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {filteredTasks.map(task => {
-                            const currentVal = taskProgress[task.id] || 0;
-                            const target = task.targets;
-                            const dailyTarget = target ? (target.value / target.frequency) : 0;
-                            const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
-                            const isCompleted = progress >= 100;
+                  <div key={obj.id} className="bg-white rounded-3xl border border-stone-100 p-5 shadow-sm relative overflow-hidden group/card transition-all hover:shadow-md">
+                     {/* Category Header */}
+                     <div className="flex items-center justify-between mb-5">
+                        <div 
+                            className="flex items-center gap-3 cursor-pointer group/title select-none"
+                            onClick={() => { setEditingObjective(obj); setIsObjModalOpen(true); }}
+                        >
+                            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-inner transition-transform group-hover/title:scale-110" style={{ backgroundColor: obj.color + '20' }}>
+                                 <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: obj.color }} />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-stone-800 text-sm leading-tight flex items-center gap-2">
+                                    {obj.title}
+                                    <Edit2 size={10} className="text-stone-300 opacity-0 group-hover/title:opacity-100 transition-opacity" />
+                                </h4>
+                                <p className="text-[10px] font-medium text-stone-400 mt-0.5 truncate max-w-[200px]">
+                                    {obj.description || '暂无描述'}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-1">
+                            <button onClick={() => moveObjective(idx, 'up')} className="p-2 text-stone-300 hover:text-stone-800 hover:bg-stone-50 rounded-lg transition-colors active:scale-95" disabled={idx === 0}><ArrowUp size={16} /></button>
+                            <button onClick={() => moveObjective(idx, 'down')} className="p-2 text-stone-300 hover:text-stone-800 hover:bg-stone-50 rounded-lg transition-colors active:scale-95" disabled={idx === sortedObjectives.length - 1}><ArrowDown size={16} /></button>
+                        </div>
+                     </div>
 
-                            return (
-                                <div 
-                                    key={task.id} 
-                                    onClick={() => { setEditingTask(task); setIsTaskModalOpen(true); }} 
-                                    className={cn(blockClass, "bg-white border-stone-100/60")}
-                                >
-                                    <div 
-                                        className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0"
-                                        style={{ 
-                                            width: `${progress}%`, 
-                                            backgroundColor: `${task.color}10`
-                                        }}
-                                    />
-
-                                    <div className="flex items-center gap-2 truncate relative z-10 flex-1 min-w-0">
-                                        <div className="w-1.5 h-1.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: task.color }} />
-                                        <span className={titleClass}>{task.name}</span>
-                                    </div>
-                                    <div className="relative z-10 flex items-center gap-1 shrink-0 ml-1">
-                                        {isCompleted ? (
-                                            <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
-                                                <Check size={10} strokeWidth={4} />
-                                            </div>
-                                        ) : dailyTarget > 0 && (
-                                            <span className="text-[8px] font-black text-stone-300 tabular-nums">
-                                                {Math.round(progress)}%
-                                            </span>
-                                        )}
-                                        <Edit2 size={10} className="text-stone-300 group-hover:text-stone-900 transition-colors ml-0.5" />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                     {/* Tasks Grid */}
+                     <div className="grid grid-cols-2 gap-3">
+                        {categoryTasks.map(task => renderTaskItem(task))}
+                        
+                        {/* Add Task Button for this Category */}
+                        <button 
+                            onClick={() => { 
+                                setEditingTask({ id: '', name: '', color: obj.color, category: obj.id, targets: undefined } as Task); 
+                                setIsTaskModalOpen(true); 
+                            }} 
+                            className="h-12 rounded-xl border-2 border-dashed border-stone-100 flex items-center justify-center gap-2 text-stone-300 hover:border-stone-300 hover:text-stone-500 hover:bg-stone-50 transition-all active:scale-[0.98]"
+                        >
+                            <Plus size={14} /> <span className="text-[10px] font-bold">添加行为</span>
+                        </button>
+                     </div>
                   </div>
                 );
               })}
+
+              {/* Uncategorized Tasks */}
+              {uncategorizedTasks.length > 0 && (
+                  <div className="bg-stone-50/50 rounded-3xl border border-stone-100 p-5 relative overflow-hidden">
+                      <div className="flex items-center gap-3 mb-5">
+                            <div className="w-10 h-10 rounded-2xl flex items-center justify-center bg-stone-100 shadow-inner">
+                                 <Layers size={16} className="text-stone-400" />
+                            </div>
+                            <div>
+                                <h4 className="font-black text-stone-400 text-sm leading-tight">未分类行为</h4>
+                                <p className="text-[10px] font-medium text-stone-300 mt-0.5">建议归类以便更好地统计</p>
+                            </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {uncategorizedTasks.map(task => renderTaskItem(task))}
+                      </div>
+                  </div>
+              )}
            </div>
         </section>
 
