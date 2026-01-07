@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ListTodo, LayoutGrid, ClipboardCheck, Settings, BarChart2, CalendarDays, RotateCcw, Loader2, Star, TrendingUp } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
@@ -224,60 +225,62 @@ export function App() {
     }) : null);
   };
 
-  const UtilityButtonClass = "w-9 h-9 flex items-center justify-center bg-stone-100 text-stone-600 rounded-full shadow-sm hover:bg-stone-200 hover:text-stone-900 transition-all active:scale-90 shrink-0 border border-stone-200/50";
+  const UtilityButtonClass = "w-8 h-8 flex items-center justify-center bg-stone-50 text-stone-500 rounded-lg shadow-sm hover:bg-stone-100 hover:text-stone-900 transition-all active:scale-95 shrink-0 border border-stone-200/50";
 
   return (
     <div className="h-screen w-screen bg-stone-50 flex items-center justify-center overflow-hidden font-sans text-stone-800 p-0 sm:p-4">
       <div className="w-full h-full sm:max-w-6xl sm:h-[96vh] bg-white sm:rounded-xl flex flex-col relative border border-stone-200 shadow-2xl overflow-hidden">
         
-        {/* 页眉导航 */}
-        <header className="pt-8 pb-3 px-8 bg-white/80 backdrop-blur-md flex items-center justify-between z-[60] shrink-0 border-b border-stone-100">
-           <div className="w-20 sm:w-28 flex justify-start items-center">
-                {activeTab === 'arrange' ? (
-                  <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="行为库">
-                    <LayoutGrid size={18} />
-                  </button>
-                ) : editingStatus ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-stone-900 text-white rounded-lg shadow-sm border border-stone-800">
-                    <span className="text-[10px] font-black whitespace-nowrap uppercase leading-none">{editingStatus}</span>
-                  </div>
-                ) : null}
-           </div>
-           
-           <div className="flex-1 flex items-center justify-center gap-1 sm:gap-2 relative">
-                <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="p-2 text-stone-300 hover:text-stone-800 transition-all"><ChevronLeft size={20} /></button>
-                
-                <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="flex flex-col items-center justify-center px-3 py-1.5 rounded-xl transition-all hover:bg-stone-50 min-w-[100px]">
-                    <span className="font-black text-lg text-stone-800 whitespace-nowrap leading-none">{format(currentDate, 'M月d日', { locale: zhCN })}</span>
-                    <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mt-1">{format(currentDate, 'EEEE', { locale: zhCN })}</span>
-                    <input ref={dateInputRef} type="date" className="absolute opacity-0 pointer-events-none" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
-                </button>
-
-                <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-2 text-stone-300 hover:text-stone-800 transition-all"><ChevronRight size={20} /></button>
-                
-                {!isToday && (
-                    <button onClick={() => setCurrentDate(new Date())} className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-stone-900 text-white text-[9px] font-black px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 z-[70] hover:bg-stone-800 active:scale-95 ring-2 ring-white whitespace-nowrap">
-                        <RotateCcw size={10} className="text-emerald-400" /> 回今日
+        {/* 页眉导航 - Compact Version with Safe Area Support */}
+        <header className="bg-white/90 backdrop-blur-md z-[60] shrink-0 border-b border-stone-100 pt-[env(safe-area-inset-top)] transition-all">
+           <div className="h-14 px-4 flex items-center justify-between">
+             <div className="w-20 flex justify-start items-center">
+                  {activeTab === 'arrange' ? (
+                    <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="行为库">
+                      <LayoutGrid size={16} />
                     </button>
-                )}
-           </div>
-           
-           <div className="w-20 sm:w-28 flex justify-end items-center gap-2">
-                {activeTab === 'arrange' && (
-                  <button onClick={() => setIsTaskStatsOpen(true)} className={UtilityButtonClass} title="成就统计">
-                    <CalendarDays size={18} />
+                  ) : editingStatus ? (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-stone-900 text-white rounded-md shadow-sm border border-stone-800 animate-in fade-in">
+                      <span className="text-[9px] font-black whitespace-nowrap uppercase leading-none">{editingStatus}</span>
+                    </div>
+                  ) : null}
+             </div>
+             
+             <div className="flex-1 flex items-center justify-center gap-1">
+                  <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="p-1.5 text-stone-300 hover:text-stone-800 transition-all active:scale-90"><ChevronLeft size={18} /></button>
+                  
+                  <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="flex items-baseline gap-2 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-all active:scale-95">
+                      <span className="font-black text-sm text-stone-800 whitespace-nowrap leading-none">{format(currentDate, 'M月d日', { locale: zhCN })}</span>
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{format(currentDate, 'EEE', { locale: zhCN })}</span>
+                      <input ref={dateInputRef} type="date" className="absolute opacity-0 pointer-events-none" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
                   </button>
-                )}
-                {activeTab === 'record' && (
-                  <button onClick={() => setIsStatsModalOpen(true)} className={UtilityButtonClass} title="统计分析">
-                    <BarChart2 size={18} className="text-indigo-600" />
-                  </button>
-                )}
-                {activeTab === 'rating' && (
-                  <button onClick={() => setIsRatingStatsOpen(true)} className={UtilityButtonClass} title="趋势统计">
-                    <TrendingUp size={18} className="text-emerald-600" />
-                  </button>
-                )}
+
+                  <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-1.5 text-stone-300 hover:text-stone-800 transition-all active:scale-90"><ChevronRight size={18} /></button>
+                  
+                  {!isToday && (
+                      <button onClick={() => setCurrentDate(new Date())} className="ml-1 p-1.5 bg-stone-100 text-stone-500 rounded-full hover:bg-stone-200 hover:text-stone-800 active:scale-90 transition-all" title="回今日">
+                          <RotateCcw size={12} />
+                      </button>
+                  )}
+             </div>
+             
+             <div className="w-20 flex justify-end items-center gap-2">
+                  {activeTab === 'arrange' && (
+                    <button onClick={() => setIsTaskStatsOpen(true)} className={UtilityButtonClass} title="成就统计">
+                      <CalendarDays size={16} />
+                    </button>
+                  )}
+                  {activeTab === 'record' && (
+                    <button onClick={() => setIsStatsModalOpen(true)} className={UtilityButtonClass} title="统计分析">
+                      <BarChart2 size={16} className="text-indigo-600" />
+                    </button>
+                  )}
+                  {activeTab === 'rating' && (
+                    <button onClick={() => setIsRatingStatsOpen(true)} className={UtilityButtonClass} title="趋势统计">
+                      <TrendingUp size={16} className="text-emerald-600" />
+                    </button>
+                  )}
+             </div>
            </div>
         </header>
 
@@ -331,8 +334,8 @@ export function App() {
         </main>
 
         {/* 底部导航 */}
-        <nav className="h-24 bg-white border-t border-stone-100 flex items-start justify-center px-4 shrink-0">
-            <div className="w-full max-w-md mt-3 bg-stone-100 rounded-2xl px-2 py-2 flex items-center justify-between border border-stone-200 shadow-sm">
+        <nav className="h-20 sm:h-24 bg-white border-t border-stone-100 flex items-start justify-center px-4 shrink-0 pb-safe">
+            <div className="w-full max-w-md mt-2 sm:mt-3 bg-stone-100 rounded-2xl px-1.5 py-1.5 flex items-center justify-between border border-stone-200 shadow-sm">
                 <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<ListTodo size={18} />} />
                 <NavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<ClipboardCheck size={18} />} />
                 <NavButton label="打分" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Star size={18} />} />
@@ -368,8 +371,8 @@ export function App() {
 }
 
 const NavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
-  <button onClick={onClick} className={cn("flex flex-col items-center justify-center flex-1 py-1.5 px-2 rounded-xl transition-all duration-300 gap-1", active ? "text-stone-900 bg-white border border-stone-200 shadow-md" : "text-stone-400 hover:text-stone-600")}>
-    <div className={cn("transition-transform duration-300", active ? "scale-110" : "scale-100")}>{icon}</div>
-    <span className={cn("text-[9px] font-black tracking-widest uppercase leading-none", active ? "opacity-100" : "opacity-60")}>{label}</span>
+  <button onClick={onClick} className={cn("flex flex-col items-center justify-center flex-1 py-2 px-2 rounded-xl transition-all duration-300 gap-1", active ? "text-stone-900 bg-white border border-stone-200 shadow-md" : "text-stone-400 hover:text-stone-600")}>
+    <div className={cn("transition-transform duration-300", active ? "scale-105" : "scale-100")}>{icon}</div>
+    <span className={cn("text-[9px] font-black tracking-widest uppercase leading-none scale-90", active ? "opacity-100" : "opacity-60")}>{label}</span>
   </button>
 );

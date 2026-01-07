@@ -1,14 +1,15 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { Todo, Objective, Task } from '../types';
 import { TodoEditorModal } from '../components/TodoEditorModal';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { cn, generateId, formatDate } from '../utils';
-import { Plus, CheckCircle2, Circle, Star, X, LayoutGrid, Trash2, ChevronRight, ListTodo, Calendar as CalendarIcon, Columns, List, Clock } from 'lucide-react';
-import { parseISO, isThisWeek, isThisMonth, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay, isSameMonth, format } from 'date-fns';
+import { Plus, CheckCircle2, Circle, Star, X, LayoutGrid, Trash2, ChevronRight, ListTodo, Columns, List } from 'lucide-react';
+import { parseISO, isThisWeek, isThisMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 type FilterRange = 'unfinished' | 'today' | 'week' | 'month' | 'all';
-type ViewMode = 'list' | 'week' | 'month';
+type ViewMode = 'list' | 'week';
 
 export interface TodoViewProps {
   todos: Todo[];
@@ -135,48 +136,48 @@ export const TodoView: React.FC<TodoViewProps> = ({
 
   const renderTaskPool = () => (
     <div className="flex flex-col h-full bg-stone-50/50">
-        <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-white sticky top-0 z-20">
-             <div className="flex items-center gap-2">
-                <LayoutGrid size={14} className="text-stone-400" />
-                <h3 className="text-[10px] font-black text-stone-900 uppercase tracking-widest leading-none">行为库 (长按编辑)</h3>
+        {/* Unified Compact Header & Category Tabs */}
+        <div className="h-11 border-b border-stone-100 flex items-center bg-white sticky top-0 z-20 shrink-0 gap-2 px-2 shadow-sm">
+             <div className="flex items-center justify-center w-8 h-8 shrink-0 text-stone-400" title="行为库">
+                <LayoutGrid size={18} />
              </div>
-             <button onClick={() => { setEditingTask(null); setIsTaskEditorOpen(true); }} className="p-1.5 bg-stone-100 text-stone-600 rounded-lg hover:bg-stone-200 transition-all">
-                <Plus size={14} />
-            </button>
-        </div>
 
-        {/* Category Tabs */}
-        <div className="px-4 py-2 bg-white border-b border-stone-100 flex gap-2 overflow-x-auto no-scrollbar shrink-0 sticky top-[53px] z-10">
-            <button 
-                onClick={() => setPoolCategory('all')}
-                className={cn(
-                    "px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border",
-                    poolCategory === 'all' ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100"
-                )}
-            >
-                全部
-            </button>
-            {objectives.map(obj => (
+             <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar mask-gradient-x items-center h-full">
                 <button 
-                    key={obj.id}
-                    onClick={() => setPoolCategory(obj.id)}
+                    onClick={() => setPoolCategory('all')}
                     className={cn(
-                        "px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border flex items-center gap-1.5",
-                        poolCategory === obj.id ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100"
+                        "px-2.5 py-1 rounded-md text-[9px] font-bold whitespace-nowrap transition-all border",
+                        poolCategory === 'all' ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100 hover:bg-stone-100"
                     )}
                 >
-                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: obj.color }} />
-                   {obj.title}
+                    全部
                 </button>
-            ))}
-             <button 
-                onClick={() => setPoolCategory('uncategorized')}
-                className={cn(
-                    "px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border",
-                    poolCategory === 'uncategorized' ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100"
-                )}
-            >
-                未分类
+                {objectives.map(obj => (
+                    <button 
+                        key={obj.id}
+                        onClick={() => setPoolCategory(obj.id)}
+                        className={cn(
+                            "px-2.5 py-1 rounded-md text-[9px] font-bold whitespace-nowrap transition-all border flex items-center gap-1.5",
+                            poolCategory === obj.id ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100 hover:bg-stone-100"
+                        )}
+                    >
+                       <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: obj.color }} />
+                       {obj.title}
+                    </button>
+                ))}
+                 <button 
+                    onClick={() => setPoolCategory('uncategorized')}
+                    className={cn(
+                        "px-2.5 py-1 rounded-md text-[9px] font-bold whitespace-nowrap transition-all border",
+                        poolCategory === 'uncategorized' ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100 hover:bg-stone-100"
+                    )}
+                >
+                    未分类
+                </button>
+             </div>
+
+             <button onClick={() => { setEditingTask(null); setIsTaskEditorOpen(true); }} className="w-8 h-8 shrink-0 flex items-center justify-center bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200 hover:text-stone-900 transition-all active:scale-95" title="添加行为">
+                <Plus size={16} />
             </button>
         </div>
 
@@ -270,84 +271,10 @@ export const TodoView: React.FC<TodoViewProps> = ({
     );
   };
 
-  const MonthView = () => {
-    const start = startOfMonth(currentDate);
-    const end = endOfMonth(currentDate);
-    const days = eachDayOfInterval({ start, end });
-    const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
-    const startOffset = start.getDay() === 0 ? 6 : start.getDay() - 1;
-
-    return (
-      <div className="flex flex-col h-full bg-stone-50 p-4 overflow-y-auto custom-scrollbar pb-32">
-        <div className="grid grid-cols-7 gap-2 mb-2 sticky top-0 bg-stone-50 z-10 py-2">
-            {weekDays.map(d => <div key={d} className="text-center text-[10px] font-black text-stone-400 uppercase">{d}</div>)}
-        </div>
-        <div className="grid grid-cols-7 gap-2 auto-rows-fr">
-            {Array.from({ length: startOffset }).map((_, i) => <div key={`empty-${i}`} />)}
-            {days.map(day => {
-                const dayStr = formatDate(day);
-                const dayTodos = todos.filter(t => t.startDate === dayStr);
-                const isToday = isSameDay(day, new Date());
-                const isSelected = isSameDay(day, currentDate);
-                const pendingCount = dayTodos.filter(t => !t.isCompleted).length;
-                const completedCount = dayTodos.filter(t => t.isCompleted).length;
-
-                return (
-                    <div 
-                      key={dayStr} 
-                      onClick={() => {
-                         setEditingTodo({
-                            id: generateId(),
-                            title: '',
-                            objectiveId: 'none',
-                            isFrog: false,
-                            isCompleted: false,
-                            subTasks: [],
-                            createdAt: new Date().toISOString(),
-                            startDate: dayStr
-                          });
-                          setIsTodoModalOpen(true);
-                      }}
-                      className={cn(
-                        "min-h-[80px] rounded-xl border p-2 flex flex-col gap-1 transition-all cursor-pointer hover:shadow-md relative overflow-hidden group",
-                        isSelected ? "bg-white border-indigo-200 ring-1 ring-indigo-100" : "bg-white border-stone-100 text-stone-600"
-                      )}
-                    >
-                       <span className={cn("text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full", isToday ? "bg-indigo-600 text-white" : "text-stone-400")}>{format(day, 'd')}</span>
-                       
-                       <div className="flex flex-col gap-1 mt-1">
-                          {dayTodos.slice(0, 3).map(t => (
-                             <div key={t.id} 
-                                onClick={(e) => { e.stopPropagation(); setEditingTodo(t); setIsTodoModalOpen(true); }}
-                                className={cn("h-1.5 rounded-full w-full", t.isCompleted ? "bg-stone-100" : (t.isFrog ? "bg-amber-400" : "bg-indigo-400"))} 
-                                title={t.title}
-                             />
-                          ))}
-                          {dayTodos.length > 3 && (
-                              <span className="text-[8px] text-stone-300 font-bold">+{dayTodos.length - 3}</span>
-                          )}
-                       </div>
-                    </div>
-                );
-            })}
-        </div>
-      </div>
-    );
-  };
-
   const ListView = () => (
     <div className="flex h-full">
       {/* 左侧：待办清单 */}
       <div className="flex-1 flex flex-col h-full border-r border-stone-100 bg-white">
-          <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-stone-100 px-5 py-3 flex items-center gap-2">
-              <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar">
-                  {(Object.keys(filterLabels) as FilterRange[]).map((range) => (
-                      <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-3 py-1.5 rounded-full text-[10px] font-black border transition-all uppercase whitespace-nowrap", activeFilter === range ? "bg-stone-900 text-white border-stone-900 shadow-sm" : "bg-white text-stone-400 border-stone-100")}>{filterLabels[range]}</button>
-                  ))}
-              </div>
-              <button onClick={() => { setEditingTodo(null); setIsTodoModalOpen(true); }} className="w-8 h-8 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg shrink-0"><Plus size={18} /></button>
-          </div>
-
           <div className="flex-1 overflow-y-auto p-5 pb-32 space-y-8 custom-scrollbar">
             {frogs.length > 0 && (
                 <section>
@@ -361,10 +288,26 @@ export const TodoView: React.FC<TodoViewProps> = ({
                             onPointerDown={() => handlePointerDown(t, 'todo')}
                             onPointerUp={handlePointerUp}
                             onPointerLeave={handlePointerUp}
-                            className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center gap-3 mb-2 cursor-pointer hover:bg-amber-100 transition-all select-none touch-manipulation"
+                            className="group bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-center gap-3 mb-2 cursor-pointer hover:bg-amber-100 transition-all select-none touch-manipulation relative"
                         >
-                            <Circle size={20} className="text-amber-200" />
-                            <span className="text-xs font-bold text-stone-800 flex-1">{t.title}</span>
+                            <Circle size={20} className="text-amber-200 shrink-0" />
+                            <span className="text-xs font-bold text-stone-800 flex-1 leading-tight">{t.title}</span>
+                            
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onUpdateTodo({ ...t, isFrog: false }); }}
+                                    className="p-2 text-amber-500 hover:text-amber-600 hover:bg-amber-200/50 rounded-lg transition-colors"
+                                    title="取消重点"
+                                >
+                                    <Star size={16} fill="currentColor" />
+                                </button>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onDeleteTodo(t.id); }} 
+                                    className="p-2 text-amber-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </section>
@@ -383,9 +326,19 @@ export const TodoView: React.FC<TodoViewProps> = ({
                         onPointerLeave={handlePointerUp}
                         className="group bg-white border border-stone-100 rounded-xl p-4 flex items-center gap-3 mb-2 shadow-sm cursor-pointer hover:border-stone-200 transition-all select-none touch-manipulation"
                     >
-                        <Circle size={20} className="text-stone-200" />
-                        <span className="text-xs font-bold text-stone-800 flex-1">{t.title}</span>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteTodo(t.id); }} className="text-stone-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
+                        <Circle size={20} className="text-stone-200 shrink-0" />
+                        <span className="text-xs font-bold text-stone-800 flex-1 leading-tight">{t.title}</span>
+                        
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); onUpdateTodo({ ...t, isFrog: true }); }}
+                                className="p-2 text-stone-300 hover:text-amber-400 hover:bg-amber-50 rounded-lg transition-colors"
+                                title="标记重点"
+                            >
+                                <Star size={16} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteTodo(t.id); }} className="p-2 text-stone-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
+                        </div>
                     </div>
                 ))}
                 {tadpoles.length === 0 && frogs.length === 0 && (
@@ -422,41 +375,62 @@ export const TodoView: React.FC<TodoViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
-      {/* 视图切换 Header */}
-       <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-5 py-3 border-b border-stone-100 flex items-center justify-between shrink-0">
-          <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
-              {(['list', 'week', 'month'] as ViewMode[]).map(m => (
+      {/* 统一视图控制 Toolbar - 极简模式 */}
+       <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between shrink-0 gap-3 h-12">
+          {/* View Mode Switcher */}
+          <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200 shrink-0">
+              {(['list', 'week'] as ViewMode[]).map(m => (
                   <button 
                       key={m}
                       onClick={() => setViewMode(m)}
                       className={cn(
-                          "px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
+                          "px-2.5 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
                           viewMode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"
                       )}
                   >
                       {m === 'list' && <List size={12} />}
                       {m === 'week' && <Columns size={12} />}
-                      {m === 'month' && <CalendarIcon size={12} />}
-                      {m === 'list' ? '列表' : m === 'week' ? '周' : '月'}
+                      <span className="hidden sm:inline">{m === 'list' ? '列表' : '周'}</span>
                   </button>
               ))}
           </div>
+          
+          {/* Filters - Only for List View */}
+          {viewMode === 'list' && (
+              <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar mask-gradient items-center justify-end">
+                  {(Object.keys(filterLabels) as FilterRange[]).map((range) => (
+                      <button 
+                        key={range} 
+                        onClick={() => setActiveFilter(range)} 
+                        className={cn(
+                            "px-2.5 py-1 rounded-full text-[9px] font-black border transition-all uppercase whitespace-nowrap", 
+                            activeFilter === range ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-400 border-stone-100"
+                        )}
+                      >
+                        {filterLabels[range]}
+                      </button>
+                  ))}
+                  <button onClick={() => { setEditingTodo(null); setIsTodoModalOpen(true); }} className="w-6 h-6 bg-stone-900 text-white rounded-full flex items-center justify-center shadow-lg shrink-0 ml-1 active:scale-95">
+                      <Plus size={14} />
+                  </button>
+              </div>
+          )}
       </div>
 
       <div className="flex-1 overflow-hidden relative">
         {viewMode === 'list' && <ListView />}
         {viewMode === 'week' && <WeekView />}
-        {viewMode === 'month' && <MonthView />}
       </div>
 
       {/* 移动端任务库抽屉 (仅在 List 视图下显示) */}
       {viewMode === 'list' && isTaskPoolOpen && (
         <div className="fixed inset-0 z-[160] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm lg:hidden">
           <div className="bg-white rounded-3xl w-full max-w-md h-[70vh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
-              <div className="flex justify-between items-center px-6 py-4 bg-stone-50 border-b border-stone-100 shrink-0">
-                  <h3 className="font-black text-[10px] text-stone-800 uppercase tracking-widest leading-none">选择行为</h3>
-                  <button onClick={() => setIsTaskPoolOpen(false)} className="p-2 hover:bg-stone-200 rounded-full text-stone-400 transition-colors"><X size={20} /></button>
-              </div>
+               {/* Mobile Task Pool also uses the new compact header */}
+               <div className="flex justify-between items-center px-4 py-3 bg-stone-50 border-b border-stone-100 shrink-0">
+                   <h3 className="font-black text-[10px] text-stone-800 uppercase tracking-widest leading-none">选择行为</h3>
+                   <button onClick={() => setIsTaskPoolOpen(false)} className="p-1.5 hover:bg-stone-200 rounded-full text-stone-400 transition-colors"><X size={18} /></button>
+               </div>
               <div className="flex-1 overflow-hidden">{renderTaskPool()}</div>
           </div>
         </div>

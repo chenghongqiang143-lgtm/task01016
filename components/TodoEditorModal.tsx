@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Todo, Objective, SubTask, TargetMode } from '../types';
-import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star } from 'lucide-react';
 import { cn, generateId, formatDate } from '../utils';
 
 interface TodoEditorModalProps {
@@ -122,7 +122,22 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
           {/* 标题 */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">任务名称</label>
+            <div className="flex justify-between items-center pr-1">
+                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">任务名称</label>
+                <button
+                    type="button"
+                    onClick={() => setIsFrog(!isFrog)}
+                    className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border",
+                        isFrog 
+                            ? "bg-amber-50 text-amber-500 border-amber-200 shadow-sm" 
+                            : "bg-white text-stone-400 border-stone-100 hover:text-stone-600 hover:border-stone-200"
+                    )}
+                >
+                    <Star size={12} fill={isFrog ? "currentColor" : "none"} />
+                    {isFrog ? "核心焦点" : "标记重点"}
+                </button>
+            </div>
             <input
               type="text"
               value={title}

@@ -176,26 +176,28 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   const PoolContent = () => (
     <div className="flex flex-col h-full bg-white">
-        <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10 shrink-0">
+        <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10 shrink-0 h-10">
             <div className="flex items-center gap-2">
                 <h3 className="text-[9px] font-bold text-stone-900 uppercase tracking-widest flex items-center gap-1.5">
-                    <LayoutGrid size={10} /> 任务库 (长按编辑)
+                    <LayoutGrid size={10} /> 任务库 (长按)
                 </h3>
             </div>
-            {activeSide === 'plan' && (
-                <button 
-                    onClick={() => setIsRecurringMode(!isRecurringMode)}
-                    className={cn(
-                        "px-2 py-0.5 rounded-md text-[8px] font-bold uppercase transition-all flex items-center gap-1 border",
-                        isRecurringMode ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-400 border-stone-100 hover:border-stone-300"
-                    )}
-                >
-                    <Repeat size={10} /> {isRecurringMode ? '已开启' : '循环'}
-                </button>
-            )}
-            <button onClick={clearSelection} className="p-1 hover:bg-stone-100 rounded-full text-stone-300 transition-colors">
-                <X size={14} />
-            </button>
+            <div className="flex items-center gap-2">
+              {activeSide === 'plan' && (
+                  <button 
+                      onClick={() => setIsRecurringMode(!isRecurringMode)}
+                      className={cn(
+                          "px-2 py-0.5 rounded-md text-[8px] font-bold uppercase transition-all flex items-center gap-1 border",
+                          isRecurringMode ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100 hover:border-stone-300"
+                      )}
+                  >
+                      <Repeat size={10} /> {isRecurringMode ? '已开启' : '循环'}
+                  </button>
+              )}
+              <button onClick={clearSelection} className="p-1 hover:bg-stone-100 rounded-full text-stone-300 transition-colors">
+                  <X size={14} />
+              </button>
+            </div>
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar pb-32">
             {sortedCategories.map(cat => (
@@ -338,7 +340,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
       </aside>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar">
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-5 py-3 border-b border-stone-100 flex items-center justify-between">
+        <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
             {/* View Switcher */}
             <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
                 {(['day', '3day'] as ViewMode[]).map(m => (
@@ -358,12 +360,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             </div>
 
             {viewMode === 'day' && (
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2 text-stone-300">
+                <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="flex items-center gap-1.5 text-stone-300">
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em]">安排</span>
                         <ChevronLeft size={12} />
                     </div>
-                    <div className="flex items-center gap-2 text-stone-300">
+                    <div className="flex items-center gap-1.5 text-stone-300">
                         <ChevronRight size={12} />
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em]">记录</span>
                     </div>
