@@ -4,8 +4,8 @@ import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { cn, formatDate, generateId } from '../utils';
-import { Clock, LayoutGrid, Check, X, ChevronLeft, ChevronRight, Repeat, Calendar as CalendarIcon, Columns } from 'lucide-react';
-import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
+import { LayoutGrid, X, ChevronLeft, ChevronRight, Repeat, Clock, Columns } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 interface TrackerViewProps {
@@ -26,7 +26,7 @@ interface TrackerViewProps {
   onEditingStatusChange?: (status: string | null) => void;
 }
 
-type ViewMode = 'day' | '3day';
+type ViewMode = 'day' | 'week';
 
 export const TrackerView: React.FC<TrackerViewProps> = ({
   tasks,
@@ -256,51 +256,83 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     </div>
   );
 
-  const ThreeDayView = () => {
-    const days = [subDays(currentDate, 1), currentDate, addDays(currentDate, 1)];
+  const WeekView = () => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    const days = eachDayOfInterval({ start, end });
+
     return (
-        <div className="flex h-full pb-32 overflow-hidden">
-            <div className="w-10 flex-shrink-0 pt-8 border-r border-stone-100 bg-white z-10">
-                {HOURS.map(h => (
-                    <div key={h} className="h-9 flex items-center justify-center text-[9px] font-mono text-stone-300">
-                        {h.toString().padStart(2, '0')}
-                    </div>
-                ))}
-            </div>
-            <div className="flex-1 flex overflow-x-auto no-scrollbar">
-                {days.map((day, i) => {
-                   const dKey = formatDate(day);
-                   const isToday = isSameDay(day, new Date());
-                   const isSelected = isSameDay(day, currentDate);
-                   const record = allRecords[dKey] || { hours: {} };
-                   
-                   return (
-                       <div key={dKey} className={cn("flex-1 min-w-[100px] border-r border-stone-100 flex flex-col", isSelected ? "bg-white" : "bg-stone-50/30")}>
-                           <div className="h-8 flex items-center justify-center border-b border-stone-100 bg-white sticky top-0 z-10">
-                               <span className={cn("text-[10px] font-black uppercase", isToday ? "text-indigo-500" : "text-stone-400")}>
-                                   {i === 0 ? '昨天' : i === 1 ? '今天' : '明天'}
-                               </span>
-                           </div>
-                           <div className="flex-1">
-                               {HOURS.map(h => {
-                                   const tasksInHour = (record.hours[h] || []).map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
-                                   return (
-                                       <div key={h} className="h-9 border-b border-stone-50 p-0.5">
-                                           {tasksInHour.length > 0 ? (
-                                               <div className="w-full h-full flex gap-0.5">
-                                                   {tasksInHour.slice(0, 3).map((t, idx) => (
-                                                       <div key={idx} className="flex-1 h-full rounded-[2px]" style={{ backgroundColor: t.color }} />
-                                                   ))}
-                                               </div>
-                                           ) : null}
-                                       </div>
-                                   );
-                               })}
-                           </div>
-                       </div>
-                   );
-                })}
-            </div>
+        <div className="flex flex-col min-h-full pb-32">
+             {/* Sticky Header Row */}
+             <div className="flex sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-100 shadow-sm shrink-0">
+                 {/* Empty corner for Time Column */}
+                 <div className="w-10 flex-shrink-0 bg-white border-r border-stone-50"></div>
+                 {/* Day Headers */}
+                 <div className="flex-1 flex overflow-hidden">
+                     {days.map(day => {
+                         const isToday = isSameDay(day, new Date());
+                         const isSelected = isSameDay(day, currentDate);
+                         return (
+                             <div key={day.toString()} className={cn("flex-1 flex flex-col items-center justify-center py-2 border-r border-stone-50/50", isSelected ? "bg-stone-50/50" : "")}>
+                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-indigo-500" : "text-stone-300")}>
+                                     {format(day, 'EEE', { locale: zhCN })}
+                                 </span>
+                                 <span className={cn("text-[10px] font-bold leading-none mt-0.5", isToday ? "text-indigo-600" : "text-stone-600")}>
+                                     {format(day, 'd')}
+                                 </span>
+                             </div>
+                         );
+                     })}
+                 </div>
+             </div>
+
+             {/* Grid Body */}
+             <div className="flex flex-1">
+                  {/* Time Column - Moves with vertical scroll but stays left */}
+                  <div className="w-10 flex-shrink-0 bg-white border-r border-stone-100 z-10">
+                      {HOURS.map(h => (
+                          <div key={h} className="h-9 flex items-center justify-center text-[9px] font-mono text-stone-300 border-b border-stone-50">
+                              {h.toString().padStart(2, '0')}
+                          </div>
+                      ))}
+                  </div>
+
+                  {/* Days Columns */}
+                  <div className="flex-1 flex">
+                      {days.map(day => {
+                          const dKey = formatDate(day);
+                          const record = allRecords[dKey] || { hours: {} };
+                          const isSelected = isSameDay(day, currentDate);
+                          
+                          return (
+                              <div key={dKey} className={cn("flex-1 border-r border-stone-50 flex flex-col", isSelected ? "bg-stone-50/20" : "")}>
+                                  {HOURS.map(h => {
+                                      const tasksInHour = (record.hours[h] || []).map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
+                                      return (
+                                          <div key={h} className="h-9 border-b border-stone-50 p-0.5 relative group">
+                                              {tasksInHour.length > 0 && (
+                                                  <div className="w-full h-full flex gap-0.5">
+                                                      {tasksInHour.slice(0, 2).map((t, idx) => (
+                                                          <div 
+                                                            key={idx} 
+                                                            className="flex-1 h-full rounded-[2px] opacity-80 hover:opacity-100 transition-opacity" 
+                                                            style={{ backgroundColor: t.color }} 
+                                                            title={t.name}
+                                                          />
+                                                      ))}
+                                                       {tasksInHour.length > 2 && (
+                                                           <div className="w-1 h-full bg-stone-200 rounded-[1px]" />
+                                                       )}
+                                                  </div>
+                                              )}
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          );
+                      })}
+                  </div>
+             </div>
         </div>
     );
   };
@@ -343,7 +375,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
             {/* View Switcher */}
             <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
-                {(['day', '3day'] as ViewMode[]).map(m => (
+                {(['day', 'week'] as ViewMode[]).map(m => (
                     <button 
                         key={m}
                         onClick={() => { setViewMode(m); setActiveSide(null); }}
@@ -353,8 +385,8 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                         )}
                     >
                         {m === 'day' && <Clock size={12} />}
-                        {m === '3day' && <Columns size={12} />}
-                        {m === 'day' ? '日' : '三日'}
+                        {m === 'week' && <Columns size={12} />}
+                        {m === 'day' ? '日' : '周'}
                     </button>
                 ))}
             </div>
@@ -374,7 +406,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         </div>
 
         {viewMode === 'day' && <DayView />}
-        {viewMode === '3day' && <ThreeDayView />}
+        {viewMode === 'week' && <WeekView />}
       </div>
 
       <TaskEditorModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} task={editingTask} onSave={onUpdateTask} onDelete={onDeleteTask} objectives={objectives} />
