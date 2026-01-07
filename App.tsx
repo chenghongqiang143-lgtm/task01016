@@ -148,37 +148,49 @@ export function App() {
   }
 
   // --- 数据管理逻辑 ---
+  
+  // 导出数据：复制到剪切板
   const handleExportData = () => {
     if (!state) return;
     const dataStr = JSON.stringify(state, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ChronosFlow_Backup_${format(new Date(), 'yyyyMMdd_HHmm')}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    navigator.clipboard.writeText(dataStr).then(() => {
+        alert('备份数据已复制到剪切板！');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        alert('复制失败，请重试');
+    });
   };
 
-  const handleImportData = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
+  // 导入数据：从字符串解析
+  const handleImportData = (dataStr: string) => {
       try {
-        const content = e.target?.result as string;
-        const imported = JSON.parse(content);
+        const imported = JSON.parse(dataStr);
         if (imported.tasks && imported.objectives) {
           setState(imported);
-          alert('数据导入成功！');
+          alert('数据恢复成功！');
         } else {
-          alert('导入失败：文件格式不符合要求');
+          alert('恢复失败：数据格式不正确');
         }
       } catch (err) {
-        alert('导入失败：解析文件出错');
+        alert('恢复失败：无法解析数据');
       }
-    };
-    reader.readAsText(file);
+  };
+  
+  // 清空记录（保留模板）
+  const handleClearRecords = () => {
+      setState(prev => {
+          if (!prev) return getInitialState();
+          return {
+              ...prev,
+              todos: [], // 清空待办实例
+              schedule: {}, // 清空日程安排
+              records: {}, // 清空实际记录
+              ratings: {}, // 清空评分
+              redemptions: [], // 清空兑换记录
+              // 保留：tasks(行为库), objectives(分类), categoryOrder, recurringSchedule(循环模板), ratingItems, shopItems, rolloverSettings
+          };
+      });
+      alert('所有历史记录已清空，模板与设置已保留。');
   };
 
   // --- 状态操作处理函数 ---
@@ -211,7 +223,13 @@ export function App() {
 
   // --- 分类管理逻辑 (新增) ---
   const handleAddObjective = (obj: Objective) => {
-    setState(prev => prev ? ({ ...prev, objectives: [...prev.objectives, obj], categoryOrder: [...prev.categoryOrder, obj.id] }) : null);
+    // 确保有 ID
+    const newObj = { ...obj, id: obj.id || generateId() };
+    setState(prev => prev ? ({ 
+      ...prev, 
+      objectives: [...prev.objectives, newObj], 
+      categoryOrder: [...prev.categoryOrder, newObj.id] 
+    }) : null);
   };
   const handleUpdateObjective = (obj: Objective) => {
     setState(prev => prev ? ({ ...prev, objectives: prev.objectives.map(o => o.id === obj.id ? obj : o) }) : null);
@@ -236,7 +254,7 @@ export function App() {
            <div className="h-14 px-4 flex items-center justify-between">
              <div className="w-20 flex justify-start items-center">
                   {activeTab === 'arrange' ? (
-                    <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="行为库">
+                    <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="任务库">
                       <LayoutGrid size={16} />
                     </button>
                   ) : editingStatus ? (
@@ -289,12 +307,14 @@ export function App() {
           {activeTab === 'arrange' && (
             <TodoView 
               todos={state.todos} objectives={state.objectives} tasks={state.tasks}
+              categoryOrder={state.categoryOrder}
               onAddTodo={(todo) => setState(prev => prev ? ({ ...prev, todos: [todo, ...prev.todos] }) : null)}
               onUpdateTodo={(todo) => setState(prev => prev ? ({ ...prev, todos: prev.todos.map(t => t.id === todo.id ? todo : t) }) : null)}
               onDeleteTodo={(id) => setState(prev => prev ? ({ ...prev, todos: prev.todos.filter(t => t.id !== id) }) : null)}
               onAddTask={handleAddTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask}
               isTaskPoolOpen={isTaskPoolOpen} setIsTaskPoolOpen={setIsTaskPoolOpen}
               currentDate={currentDate}
+              onDateChange={setCurrentDate} // Pass the date change handler
             />
           )}
 
@@ -327,7 +347,7 @@ export function App() {
                 onUpdateCategoryOrder={(order) => setState(prev => prev ? ({ ...prev, categoryOrder: order }) : null)}
                 allSchedules={state.schedule} allRecords={state.records} currentDate={currentDate} 
                 rolloverSettings={state.rolloverSettings} onUpdateRolloverSettings={(s) => setState(prev => prev ? ({ ...prev, rolloverSettings: s }) : null)}
-                onExportData={handleExportData} onImportData={handleImportData} onClearData={() => setState(getInitialState())} showInstallButton={false} onInstall={() => {}}
+                onExportData={handleExportData} onImportData={handleImportData} onClearData={handleClearRecords} showInstallButton={false} onInstall={() => {}}
                 onAddObjective={handleAddObjective} onUpdateObjective={handleUpdateObjective} onDeleteObjective={handleDeleteObjective}
             />
           )}

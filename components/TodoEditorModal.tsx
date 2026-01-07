@@ -97,6 +97,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
       id: todo ? todo.id : generateId(),
       title: title.trim(),
       objectiveId,
+      templateId: todo?.templateId, // 关键修复：保存时保留模板ID关联
       isFrog,
       isCompleted: todo ? todo.isCompleted : false,
       subTasks,
