@@ -4,7 +4,9 @@ import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { cn, formatDate, generateId } from '../utils';
-import { Clock, LayoutGrid, Check, X, ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
+import { Clock, LayoutGrid, Check, X, ChevronLeft, ChevronRight, Repeat, Calendar as CalendarIcon, Columns } from 'lucide-react';
+import { format, addDays, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 interface TrackerViewProps {
   tasks: Task[];
@@ -24,6 +26,8 @@ interface TrackerViewProps {
   onEditingStatusChange?: (status: string | null) => void;
 }
 
+type ViewMode = 'day' | '3day';
+
 export const TrackerView: React.FC<TrackerViewProps> = ({
   tasks,
   objectives,
@@ -31,6 +35,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   scheduleData,
   recordData,
   recurringSchedule,
+  allRecords,
   onUpdateRecord,
   onUpdateSchedule,
   onUpdateRecurring,
@@ -39,6 +44,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   currentDate,
   onEditingStatusChange
 }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [activeSide, setActiveSide] = useState<'plan' | 'actual' | null>(null);
   const [selectedHours, setSelectedHours] = useState<Set<number>>(new Set<number>());
   
@@ -46,7 +52,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Fix: Use ReturnType<typeof setTimeout> instead of NodeJS.Timeout to avoid namespace errors in browser environment
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
@@ -102,6 +107,8 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   };
 
   const handleHourClick = (hour: number, side: 'plan' | 'actual') => {
+    if (viewMode !== 'day') return; // Only allow editing in Day view for now to avoid complexity
+
     if (activeSide !== side) {
         setActiveSide(side);
         setSelectedHours(new Set([hour]));
@@ -165,6 +172,8 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
       setActiveSide(null);
   };
 
+  // --- Render Components ---
+
   const PoolContent = () => (
     <div className="flex flex-col h-full bg-white">
         <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10 shrink-0">
@@ -212,7 +221,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                                     onPointerUp={handleTaskPointerUp}
                                     onPointerLeave={handleTaskPointerUp}
                                     className={cn(
-                                        "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none",
+                                        "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none touch-manipulation",
                                         isSelected 
                                             ? "bg-stone-900 border-stone-900 text-white z-10" 
                                             : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
@@ -245,6 +254,73 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     </div>
   );
 
+  const ThreeDayView = () => {
+    const days = [subDays(currentDate, 1), currentDate, addDays(currentDate, 1)];
+    return (
+        <div className="flex h-full pb-32 overflow-hidden">
+            <div className="w-10 flex-shrink-0 pt-8 border-r border-stone-100 bg-white z-10">
+                {HOURS.map(h => (
+                    <div key={h} className="h-9 flex items-center justify-center text-[9px] font-mono text-stone-300">
+                        {h.toString().padStart(2, '0')}
+                    </div>
+                ))}
+            </div>
+            <div className="flex-1 flex overflow-x-auto no-scrollbar">
+                {days.map((day, i) => {
+                   const dKey = formatDate(day);
+                   const isToday = isSameDay(day, new Date());
+                   const isSelected = isSameDay(day, currentDate);
+                   const record = allRecords[dKey] || { hours: {} };
+                   
+                   return (
+                       <div key={dKey} className={cn("flex-1 min-w-[100px] border-r border-stone-100 flex flex-col", isSelected ? "bg-white" : "bg-stone-50/30")}>
+                           <div className="h-8 flex items-center justify-center border-b border-stone-100 bg-white sticky top-0 z-10">
+                               <span className={cn("text-[10px] font-black uppercase", isToday ? "text-indigo-500" : "text-stone-400")}>
+                                   {i === 0 ? '昨天' : i === 1 ? '今天' : '明天'}
+                               </span>
+                           </div>
+                           <div className="flex-1">
+                               {HOURS.map(h => {
+                                   const tasksInHour = (record.hours[h] || []).map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
+                                   return (
+                                       <div key={h} className="h-9 border-b border-stone-50 p-0.5">
+                                           {tasksInHour.length > 0 ? (
+                                               <div className="w-full h-full flex gap-0.5">
+                                                   {tasksInHour.slice(0, 3).map((t, idx) => (
+                                                       <div key={idx} className="flex-1 h-full rounded-[2px]" style={{ backgroundColor: t.color }} />
+                                                   ))}
+                                               </div>
+                                           ) : null}
+                                       </div>
+                                   );
+                               })}
+                           </div>
+                       </div>
+                   );
+                })}
+            </div>
+        </div>
+    );
+  };
+
+  const DayView = () => (
+    <div className="pt-1">
+        {HOURS.map(hour => (
+        <TimelineRow 
+            key={hour} 
+            hour={hour} 
+            assignedScheduleIds={scheduleData.hours[hour] || []} 
+            assignedRecordIds={recordData.hours[hour] || []} 
+            allTasks={tasks} 
+            onScheduleClick={(h) => handleHourClick(h, 'plan')}
+            onRecordClick={(h) => handleHourClick(h, 'actual')}
+            isScheduleSelected={activeSide === 'plan' && selectedHours.has(hour)}
+            isRecordSelected={activeSide === 'actual' && selectedHours.has(hour)}
+        />
+        ))}
+    </div>
+  );
+
   return (
     <div className="flex h-full bg-white overflow-hidden relative">
       <aside className={cn(
@@ -261,38 +337,42 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         <PoolContent />
       </aside>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar pb-32">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar">
         <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-5 py-3 border-b border-stone-100 flex items-center justify-between">
-            <div className="flex items-center gap-6 w-full">
-                <div className="flex-1 flex items-center justify-center gap-2 text-stone-300">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] whitespace-nowrap">安排</span>
-                    <ChevronLeft size={12} />
-                </div>
-                <div className="w-14 flex items-center justify-center">
-                    <Clock size={16} className="text-stone-200" />
-                </div>
-                <div className="flex-1 flex items-center justify-center gap-2 text-stone-300">
-                    <ChevronRight size={12} />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] whitespace-nowrap">记录</span>
-                </div>
+            {/* View Switcher */}
+            <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+                {(['day', '3day'] as ViewMode[]).map(m => (
+                    <button 
+                        key={m}
+                        onClick={() => { setViewMode(m); setActiveSide(null); }}
+                        className={cn(
+                            "px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
+                            viewMode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"
+                        )}
+                    >
+                        {m === 'day' && <Clock size={12} />}
+                        {m === '3day' && <Columns size={12} />}
+                        {m === 'day' ? '日' : '三日'}
+                    </button>
+                ))}
             </div>
+
+            {viewMode === 'day' && (
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 text-stone-300">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">安排</span>
+                        <ChevronLeft size={12} />
+                    </div>
+                    <div className="flex items-center gap-2 text-stone-300">
+                        <ChevronRight size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">记录</span>
+                    </div>
+                </div>
+            )}
         </div>
 
-        <div className="pt-1">
-          {HOURS.map(hour => (
-            <TimelineRow 
-              key={hour} 
-              hour={hour} 
-              assignedScheduleIds={scheduleData.hours[hour] || []} 
-              assignedRecordIds={recordData.hours[hour] || []} 
-              allTasks={tasks} 
-              onScheduleClick={(h) => handleHourClick(h, 'plan')}
-              onRecordClick={(h) => handleHourClick(h, 'actual')}
-              isScheduleSelected={activeSide === 'plan' && selectedHours.has(hour)}
-              isRecordSelected={activeSide === 'actual' && selectedHours.has(hour)}
-            />
-          ))}
-        </div>
+        {viewMode === 'day' && <DayView />}
+        {viewMode === '3day' && <ThreeDayView />}
       </div>
 
       <TaskEditorModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} task={editingTask} onSave={onUpdateTask} onDelete={onDeleteTask} objectives={objectives} />

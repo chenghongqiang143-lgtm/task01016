@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Task, DayData, Objective, HOURS, RolloverSettings } from '../types';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { ObjectiveEditorModal } from '../components/ObjectiveEditorModal';
-import { Plus, ArrowUp, ArrowDown, Edit2, Check, Download, Upload, Trash2, Database, X, AlertCircle, CalendarClock, Target } from 'lucide-react';
+import { Plus, ArrowUp, ArrowDown, Edit2, Check, Download, Upload, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson } from 'lucide-react';
 import { cn, formatDate } from '../utils';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -53,6 +53,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isObjModalOpen, setIsObjModalOpen] = useState(false);
   const [isDataOverlayOpen, setIsDataOverlayOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
@@ -100,7 +101,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       onImportData(file);
-      setIsDataOverlayOpen(false);
+      setIsBackupModalOpen(false);
+      // Reset input so same file can be selected again if needed
+      e.target.value = '';
     }
   };
 
@@ -270,7 +273,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
            </div>
         </section>
 
-        {/* 数据安全与维护区域 - Optimized layout and typography */}
+        {/* 数据安全与维护区域 */}
         <section className="space-y-4">
            <div className="px-1">
               <h3 className={sectionTitleClass}>数据安全与维护</h3>
@@ -289,19 +292,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 w-full">
+              <div className="w-full">
                   <button 
-                    onClick={onExportData}
-                    className="flex items-center justify-center gap-2.5 py-3.5 px-4 bg-white border border-stone-100 rounded-2xl text-[12px] font-black uppercase tracking-wider text-stone-700 hover:bg-stone-50 transition-all shadow-sm active:scale-95"
+                    onClick={(e) => { e.stopPropagation(); setIsBackupModalOpen(true); }}
+                    className="w-full py-3.5 px-4 bg-white border border-stone-200 rounded-2xl text-[12px] font-black uppercase tracking-wider text-stone-800 hover:bg-stone-50 hover:border-stone-300 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
                   >
-                    <Download size={16} /> 导出备份
-                  </button>
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center gap-2.5 py-3.5 px-4 bg-white border border-stone-100 rounded-2xl text-[12px] font-black uppercase tracking-wider text-stone-700 hover:bg-stone-50 transition-all shadow-sm active:scale-95"
-                  >
-                    <Upload size={16} /> 导入恢复
-                    <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileChange} className="hidden" />
+                    <FileJson size={16} /> 数据备份与恢复
                   </button>
               </div>
 
@@ -309,12 +305,56 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   onClick={() => setIsDataOverlayOpen(true)}
                   className="w-full py-4 bg-stone-900 text-white rounded-2xl text-[12px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:bg-stone-800"
               >
-                  进入管理模式
+                  进入清空管理模式
               </button>
            </div>
         </section>
       </div>
 
+      {/* 备份与恢复弹窗 */}
+      {isBackupModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+                 <div className="px-6 py-5 bg-stone-50 border-b border-stone-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <FileJson size={18} className="text-stone-900" />
+                        <h3 className="font-black text-stone-900 text-[14px]">数据备份</h3>
+                    </div>
+                    <button onClick={() => setIsBackupModalOpen(false)} className="p-2 hover:bg-stone-200 rounded-full transition-colors text-stone-400">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    <button 
+                        onClick={() => { onExportData(); setIsBackupModalOpen(false); }}
+                        className="w-full py-4 bg-stone-900 text-white rounded-2xl text-[12px] font-black uppercase tracking-wider shadow-lg hover:bg-stone-800 active:scale-95 transition-all flex items-center justify-center gap-3"
+                    >
+                        <Download size={18} /> 导出数据备份 (JSON)
+                    </button>
+                    
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-stone-100"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                            <span className="bg-white px-2 text-stone-400 font-bold uppercase">OR</span>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-4 bg-white border-2 border-dashed border-stone-200 text-stone-500 rounded-2xl text-[12px] font-black uppercase tracking-wider hover:bg-stone-50 hover:border-stone-300 active:scale-95 transition-all flex items-center justify-center gap-3"
+                    >
+                        <Upload size={18} /> 导入数据恢复
+                        <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileChange} className="hidden" />
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* 清空数据警告弹窗 */}
       {isDataOverlayOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">

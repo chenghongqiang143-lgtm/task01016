@@ -40,6 +40,7 @@ export interface Todo {
   completedAt?: string; // yyyy-MM-dd
   startDate?: string; // yyyy-MM-dd
   dueTime?: string; // HH:mm
+  targets?: TaskTarget; // 新增：允许待办拥有量化目标和周期
 }
 
 export interface DayData {

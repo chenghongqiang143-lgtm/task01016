@@ -208,6 +208,22 @@ export function App() {
     setState(prev => prev ? ({ ...prev, redemptions: [...prev.redemptions, redemption] }) : null);
   };
 
+  // --- 分类管理逻辑 (新增) ---
+  const handleAddObjective = (obj: Objective) => {
+    setState(prev => prev ? ({ ...prev, objectives: [...prev.objectives, obj], categoryOrder: [...prev.categoryOrder, obj.id] }) : null);
+  };
+  const handleUpdateObjective = (obj: Objective) => {
+    setState(prev => prev ? ({ ...prev, objectives: prev.objectives.map(o => o.id === obj.id ? obj : o) }) : null);
+  };
+  const handleDeleteObjective = (id: string) => {
+    setState(prev => prev ? ({ 
+      ...prev, 
+      objectives: prev.objectives.filter(o => o.id !== id),
+      categoryOrder: prev.categoryOrder.filter(cid => cid !== id),
+      tasks: prev.tasks.map(t => t.category === id ? { ...t, category: 'uncategorized' } : t)
+    }) : null);
+  };
+
   const UtilityButtonClass = "w-9 h-9 flex items-center justify-center bg-stone-100 text-stone-600 rounded-full shadow-sm hover:bg-stone-200 hover:text-stone-900 transition-all active:scale-90 shrink-0 border border-stone-200/50";
 
   return (
@@ -218,7 +234,7 @@ export function App() {
         <header className="pt-8 pb-3 px-8 bg-white/80 backdrop-blur-md flex items-center justify-between z-[60] shrink-0 border-b border-stone-100">
            <div className="w-20 sm:w-28 flex justify-start items-center">
                 {activeTab === 'arrange' ? (
-                  <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="模板库">
+                  <button onClick={() => setIsTaskPoolOpen(true)} className={UtilityButtonClass} title="行为库">
                     <LayoutGrid size={18} />
                   </button>
                 ) : editingStatus ? (
@@ -309,6 +325,7 @@ export function App() {
                 allSchedules={state.schedule} allRecords={state.records} currentDate={currentDate} 
                 rolloverSettings={state.rolloverSettings} onUpdateRolloverSettings={(s) => setState(prev => prev ? ({ ...prev, rolloverSettings: s }) : null)}
                 onExportData={handleExportData} onImportData={handleImportData} onClearData={() => setState(getInitialState())} showInstallButton={false} onInstall={() => {}}
+                onAddObjective={handleAddObjective} onUpdateObjective={handleUpdateObjective} onDeleteObjective={handleDeleteObjective}
             />
           )}
         </main>
