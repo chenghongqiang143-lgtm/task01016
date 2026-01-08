@@ -14,6 +14,7 @@ import {
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn, formatDate } from '../utils';
+import { useModalBackHandler } from '../hooks';
 
 interface TaskStatsModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
   objectives,
   currentDate
 }) => {
+  useModalBackHandler(isOpen, onClose);
+  
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Todo, Objective, SubTask, TargetMode } from '../types';
 import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star } from 'lucide-react';
 import { cn, generateId, formatDate } from '../utils';
+import { useModalBackHandler } from '../hooks';
 
 interface TodoEditorModalProps {
   todo: Todo | null;
@@ -25,6 +26,8 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
   frogCount,
   defaultDate = new Date()
 }) => {
+  useModalBackHandler(isOpen, onClose);
+
   const [title, setTitle] = useState('');
   const [objectiveId, setObjectiveId] = useState('none');
   const [isFrog, setIsFrog] = useState(false);

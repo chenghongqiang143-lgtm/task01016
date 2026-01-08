@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { DayRating, RatingItem, ShopItem, Redemption } from '../types';
 import { cn, formatDate, generateId } from '../utils';
 import { MessageSquareQuote, Plus, Settings2, X, Trash2, ShoppingBag, Coins, Edit2, Save, PenTool } from 'lucide-react';
+import { useModalBackHandler } from '../hooks';
 
 interface RatingViewProps {
   currentDate: Date;
@@ -35,6 +36,12 @@ export const RatingView: React.FC<RatingViewProps> = ({
   
   const [editingItem, setEditingItem] = useState<RatingItem | null>(null);
   const [editingShopItem, setEditingShopItem] = useState<ShopItem | null>(null);
+
+  // Use back handler for modals
+  useModalBackHandler(isConfigModalOpen, () => setIsConfigModalOpen(false));
+  useModalBackHandler(isShopModalOpen, () => setIsShopModalOpen(false));
+  useModalBackHandler(!!editingItem, () => setEditingItem(null));
+  useModalBackHandler(!!editingShopItem, () => setEditingShopItem(null));
 
   const dateKey = formatDate(currentDate);
   const currentRating = ratings[dateKey] || { scores: {}, comment: '' };

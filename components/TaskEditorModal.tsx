@@ -4,6 +4,7 @@ import { Task, TargetMode, Objective } from '../types';
 import { X, Target, Type, Trash2, Save, LayoutList, Hash, Clock, Tag, Plus } from 'lucide-react';
 import { cn, generateId } from '../utils';
 import { ObjectiveEditorModal } from './ObjectiveEditorModal';
+import { useModalBackHandler } from '../hooks';
 
 interface TaskEditorModalProps {
   task: Task | null;
@@ -33,6 +34,8 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   onAddObjective,
   onDeleteObjective
 }) => {
+  useModalBackHandler(isOpen, onClose);
+
   const [name, setName] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [categoryInput, setCategoryInput] = useState('');

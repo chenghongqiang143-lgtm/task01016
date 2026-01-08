@@ -5,6 +5,7 @@ import { Clock, TrendingUp, Target, X, Calendar as CalendarIcon, LayoutGrid, Awa
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, startOfMonth, endOfMonth, zhCN } from 'date-fns';
 import { formatDate, cn } from '../utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
+import { useModalBackHandler } from '../hooks';
 
 interface StatsViewProps {
   tasks: Task[];
@@ -29,6 +30,9 @@ export const StatsView: React.FC<StatsViewProps> = ({
   isModal = true,
   onClose
 }) => {
+  // Only hook back handler if used as a modal
+  useModalBackHandler(isOpen && isModal, onClose);
+
   const [range, setRange] = useState<StatsRange>('day');
 
   const selectedPeriod = useMemo(() => {

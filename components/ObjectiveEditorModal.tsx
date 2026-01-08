@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Objective } from '../types';
 import { X, Save, Target, AlignLeft, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '../utils';
+import { useModalBackHandler } from '../hooks';
 
 interface ObjectiveEditorModalProps {
   objective: Objective | null;
@@ -21,6 +22,8 @@ export const ObjectiveEditorModal: React.FC<ObjectiveEditorModalProps> = ({
   onDelete,
   zIndex = 200
 }) => {
+  useModalBackHandler(isOpen, onClose);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState('#64748b');

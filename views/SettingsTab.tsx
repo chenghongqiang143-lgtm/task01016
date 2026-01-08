@@ -7,6 +7,7 @@ import { Plus, ArrowUp, ArrowDown, Edit2, Check, Copy, ClipboardPaste, Trash2, D
 import { cn, formatDate } from '../utils';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { useModalBackHandler } from '../hooks';
 
 interface SettingsTabProps {
   tasks: Task[];
@@ -61,6 +62,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   
   // Default to false (folded) as requested
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+
+  // Hook for inline modals (TaskEditorModal and ObjectiveEditorModal handle their own history)
+  useModalBackHandler(isDataOverlayOpen, () => setIsDataOverlayOpen(false));
+  useModalBackHandler(isBackupModalOpen, () => setIsBackupModalOpen(false));
 
   const taskProgress = useMemo(() => {
     const dKey = formatDate(currentDate);

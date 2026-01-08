@@ -14,6 +14,7 @@ import {
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn, formatDate } from '../utils';
+import { useModalBackHandler } from '../hooks';
 
 interface RatingStatsModalProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
   ratingItems,
   currentDate
 }) => {
+  useModalBackHandler(isOpen, onClose);
+
   const [range, setRange] = useState<'week' | 'month'>('week');
 
   const periodInterval = useMemo(() => {
