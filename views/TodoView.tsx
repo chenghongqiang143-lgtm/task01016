@@ -298,7 +298,19 @@ export const TodoView: React.FC<TodoViewProps> = ({
                 </button>
              </div>
 
-             <button onClick={() => { setEditingTask(null); setIsTaskEditorOpen(true); }} className="w-8 h-8 shrink-0 flex items-center justify-center bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200 hover:text-stone-900 transition-all active:scale-95" title="添加行为">
+             <button 
+                onClick={() => { 
+                    const initialCat = poolCategory === 'uncategorized' ? '' : poolCategory;
+                    // Find color of category to set default color, else blue
+                    const catObj = objectives.find(o => o.id === initialCat);
+                    const initialColor = catObj ? catObj.color : '#3b82f6';
+                    
+                    setEditingTask({ id: '', name: '', color: initialColor, category: initialCat } as Task);
+                    setIsTaskEditorOpen(true); 
+                }} 
+                className="w-8 h-8 shrink-0 flex items-center justify-center bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200 hover:text-stone-900 transition-all active:scale-95" 
+                title="添加行为"
+            >
                 <Plus size={16} />
             </button>
         </div>

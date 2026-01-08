@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Todo, Objective, SubTask, TargetMode } from '../types';
-import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star, AlertCircle } from 'lucide-react';
 import { cn, generateId, formatDate } from '../utils';
 import { useModalBackHandler } from '../hooks';
 
@@ -34,6 +34,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
   const [startDate, setStartDate] = useState<string>('');
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Target & Frequency State
   const [targetMode, setTargetMode] = useState<TargetMode>('duration');
@@ -49,6 +50,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setIsFrog(todo.isFrog);
         setStartDate(todo.startDate || '');
         setSubTasks(todo.subTasks || []);
+        setShowDeleteConfirm(false);
         if (todo.targets) {
             setTargetValue(todo.targets.value ? todo.targets.value.toString() : '');
             setTargetFrequency(todo.targets.frequency.toString());
@@ -64,6 +66,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setStartDate(formatDate(defaultDate));
         setSubTasks([]);
         setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
+        setShowDeleteConfirm(false);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +119,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
       <div className="bg-white rounded-xl w-full max-w-[380px] overflow-hidden border border-stone-300 shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center px-6 py-5 bg-stone-50 border-b border-stone-200">
           <h3 className="font-black text-sm text-stone-800">
-            {todo ? '编辑待办' : '新建待办'}
+            {todo ? '编辑任务' : '新建任务'}
           </h3>
           <button onClick={onClose} className="p-1.5 hover:bg-stone-200 rounded-full text-stone-400">
             <X size={18} />
@@ -270,27 +273,50 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         </form>
 
         <div className="p-5 bg-stone-50 border-t border-stone-200 flex gap-2">
-          {todo && onDelete && (
-            <button 
-              type="button" 
-              onClick={(e) => { 
-                  e.preventDefault(); 
-                  e.stopPropagation(); 
-                  onDelete(todo.id); 
-                  onClose(); 
-              }}
-              className="p-3 rounded-lg bg-white border border-rose-100 text-rose-500 hover:bg-rose-50 transition-colors"
-            >
-              <Trash2 size={18} />
-            </button>
+          {showDeleteConfirm ? (
+              <div className="flex gap-2 flex-1 animate-in zoom-in-95 fade-in duration-200">
+                  <button 
+                      type="button" 
+                      onClick={() => setShowDeleteConfirm(false)} 
+                      className="flex-1 py-3.5 bg-white border border-stone-200 text-stone-500 rounded-xl font-bold text-xs hover:bg-stone-50 transition-colors"
+                  >
+                      取消
+                  </button>
+                  <button 
+                      type="button" 
+                      onClick={(e) => { 
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          if (onDelete && todo) {
+                              onDelete(todo.id); 
+                              onClose(); 
+                          }
+                      }}
+                      className="flex-1 py-3.5 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-colors shadow-sm flex items-center justify-center gap-1"
+                  >
+                      <Trash2 size={14} /> 确认删除
+                  </button>
+              </div>
+          ) : (
+             <>
+                 {todo && onDelete && (
+                    <button 
+                      type="button" 
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="px-4 rounded-xl bg-white border border-stone-200 text-stone-400 hover:text-red-500 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={handleSubmit}
+                    className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-stone-800 transition-all shadow-lg active:scale-[0.98]"
+                  >
+                    <Save size={18} /> 保存任务
+                  </button>
+             </>
           )}
-          <button 
-            type="button" 
-            onClick={handleSubmit}
-            className="flex-1 py-3 rounded-lg bg-stone-900 text-white font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-          >
-            <Save size={18} /> 保存任务
-          </button>
         </div>
       </div>
     </div>
