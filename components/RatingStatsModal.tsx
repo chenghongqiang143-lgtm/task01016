@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { DayRating, RatingItem } from '../types';
-import { X, TrendingUp, Calendar, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { X, TrendingUp, Calendar, ChevronLeft, ChevronRight, Star, MessageSquareQuote } from 'lucide-react';
 import { 
   startOfWeek, 
   endOfWeek, 
@@ -131,6 +131,17 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
       }
   };
 
+  // Get weekly reviews
+  const weeklyReviews = useMemo(() => {
+    if (range !== 'week') return [];
+    
+    return timeColumns.map(day => {
+        const key = formatDate(day);
+        const comment = ratings[key]?.comment;
+        return { date: day, comment };
+    }).filter(item => item.comment && item.comment.trim() !== '');
+  }, [range, timeColumns, ratings]);
+
   if (!isOpen) return null;
 
   return (
@@ -143,7 +154,7 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
               <TrendingUp size={18} />
             </div>
             <div>
-              <h3 className="font-black text-stone-800 text-sm">评估趋势统计</h3>
+              <h3 className="font-black text-stone-800 text-sm">打分统计</h3>
               <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                 {format(periodInterval.start, 'M月d日')} - {format(periodInterval.end, 'M月d日')}
               </p>
@@ -196,15 +207,14 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <Calendar size={14} className="text-stone-300" />
-              <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">维度热力分析 ({range === 'month' ? '按周汇总' : '每日详情'})</h4>
+              <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">维度热力 ({range === 'month' ? '按周' : '每日'})</h4>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm overflow-x-auto no-scrollbar">
-              {/* Removed min-w constraint to allow flex scaling on mobile */}
               <div className="w-full">
                 {/* 日期头部 */}
                 <div className="flex mb-3">
-                  <div className="w-20 shrink-0"></div> {/* Reduced width from 24 to 20 */}
+                  <div className="w-20 shrink-0"></div>
                   <div className="flex-1 flex justify-between gap-1">
                     {timeColumns.map((d, idx) => (
                       <div key={d.toString()} className="flex-1 flex flex-col items-center gap-0.5 min-w-[2rem]">
@@ -258,24 +268,40 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
               </div>
             </div>
           </div>
-
-          {/* 图例 (Compact Row) */}
-          <div className="mt-4 pt-4 border-t border-stone-100">
-            <div className="flex flex-nowrap overflow-x-auto no-scrollbar items-center justify-between gap-2 w-full">
-              {[
-                { s: 2, label: '极佳', color: 'bg-emerald-600', text: 'text-emerald-700', border: 'border-emerald-200' },
-                { s: 1, label: '较好', color: 'bg-emerald-400', text: 'text-emerald-600', border: 'border-emerald-100' },
-                { s: 0, label: '一般', color: 'bg-stone-300', text: 'text-stone-500', border: 'border-stone-200' },
-                { s: -1, label: '略差', color: 'bg-rose-400', text: 'text-rose-500', border: 'border-rose-100' },
-                { s: -2, label: '极差', color: 'bg-rose-600', text: 'text-rose-700', border: 'border-rose-200' },
-              ].map(item => (
-                <div key={item.s} className={cn("flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white border shadow-sm shrink-0 flex-1 justify-center min-w-0", item.border)}>
-                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", item.color)} />
-                  <span className={cn("text-[8px] font-bold whitespace-nowrap truncate", item.text)}>{item.s > 0 ? `+${item.s}` : item.s} {item.label}</span>
+          
+          {/* Weekly Reviews List */}
+          {range === 'week' && (
+             <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-2 px-1">
+                  <MessageSquareQuote size={14} className="text-stone-300" />
+                  <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">本周复盘记录</h4>
                 </div>
-              ))}
-            </div>
-          </div>
+                
+                {weeklyReviews.length > 0 ? (
+                    <div className="space-y-3">
+                        {weeklyReviews.map((item, idx) => (
+                            <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex gap-3">
+                                <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5 w-12 border-r border-stone-50 pr-3">
+                                    <span className="text-[9px] font-black text-stone-300 uppercase">
+                                        {format(item.date, 'EE', { locale: zhCN })}
+                                    </span>
+                                    <span className="text-xs font-black text-stone-800">
+                                        {format(item.date, 'd')}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-stone-600 font-medium leading-relaxed whitespace-pre-wrap">
+                                    {item.comment}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-8 text-center bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-100">
+                        <span className="text-[10px] font-bold text-stone-300">本周暂无复盘内容</span>
+                    </div>
+                )}
+             </div>
+          )}
 
         </div>
       </div>

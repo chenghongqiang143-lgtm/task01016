@@ -3,25 +3,26 @@ import { useEffect, useRef } from 'react';
 
 export const useModalBackHandler = (isOpen: boolean, onClose: () => void) => {
   const onCloseRef = useRef(onClose);
-  const poppedRef = useRef(false);
+  // Track if we have manually popped the state or if the system did it
+  const isHistoryPushed = useRef(false);
 
-  // Update ref when onClose changes to avoid re-triggering the effect
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
-      // Push a new entry to the history stack
+      // 当模态框打开时，推入一个新的历史状态
+      // 这使得安卓物理返回键会 "后退" 到上一个状态（即关闭模态框），而不是退出应用
       window.history.pushState({ modalOpen: true }, '');
-      poppedRef.current = false;
+      isHistoryPushed.current = true;
 
       const handlePopState = (e: PopStateEvent) => {
-        // The back button/gesture was triggered
-        poppedRef.current = true;
-        // Call the close callback
+        // 当用户点击物理返回键时，popstate 事件触发
+        // 此时历史记录已经回退了，我们只需要更新 UI (关闭模态框)
+        isHistoryPushed.current = false;
         if (onCloseRef.current) {
-            onCloseRef.current();
+          onCloseRef.current();
         }
       };
 
@@ -29,9 +30,10 @@ export const useModalBackHandler = (isOpen: boolean, onClose: () => void) => {
 
       return () => {
         window.removeEventListener('popstate', handlePopState);
-        // If cleanup is running and it wasn't due to popstate (i.e., closed via UI button),
-        // we need to manually go back to remove the history entry we pushed.
-        if (!poppedRef.current) {
+        // 如果组件卸载（例如用户点击了页面上的关闭按钮），
+        // 此时历史记录还在 "modalOpen" 状态，我们需要手动后退一次来清理它
+        if (isHistoryPushed.current) {
+          isHistoryPushed.current = false;
           window.history.back();
         }
       };

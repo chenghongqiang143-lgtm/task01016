@@ -288,7 +288,7 @@ export function App() {
                     </button>
                   )}
                   {activeTab === 'rating' && (
-                    <button onClick={() => setIsRatingStatsOpen(true)} className={UtilityButtonClass} title="趋势统计">
+                    <button onClick={() => setIsRatingStatsOpen(true)} className={UtilityButtonClass} title="打分统计">
                       <TrendingUp size={16} className="text-emerald-600" />
                     </button>
                   )}
