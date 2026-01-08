@@ -308,7 +308,9 @@ export function App() {
               onAddTask={handleAddTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask}
               isTaskPoolOpen={isTaskPoolOpen} setIsTaskPoolOpen={setIsTaskPoolOpen}
               currentDate={currentDate}
-              onDateChange={setCurrentDate} // Pass the date change handler
+              onDateChange={setCurrentDate}
+              onUpdateObjective={handleUpdateObjective}
+              onDeleteObjective={handleDeleteObjective}
             />
           )}
 
@@ -350,7 +352,10 @@ export function App() {
           {!isToday && (
             <button 
                 onClick={() => setCurrentDate(new Date())} 
-                className="absolute bottom-6 right-6 z-[80] p-3 bg-stone-900 text-white rounded-full shadow-xl shadow-stone-900/20 active:scale-90 transition-all animate-in zoom-in duration-200"
+                className={cn(
+                  "absolute bottom-6 z-[80] p-3 bg-white text-stone-900 border border-stone-200 rounded-full shadow-xl hover:bg-stone-50 active:scale-90 transition-all animate-in zoom-in duration-200",
+                  activeTab === 'arrange' ? "right-20" : "right-6"
+                )}
                 title="回到今天"
             >
                 <RotateCcw size={18} />
