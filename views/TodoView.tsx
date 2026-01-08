@@ -697,7 +697,7 @@ export const TodoView: React.FC<TodoViewProps> = ({
           
           {/* Filters - Only for List View */}
           {viewMode === 'list' && (
-              <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar mask-gradient items-center justify-end">
+              <div className="flex-1 flex gap-1 overflow-x-auto no-scrollbar items-center pl-2 min-w-0">
                   {filterOrder.map((range) => (
                       <button 
                         key={range} 

@@ -274,12 +274,6 @@ export function App() {
                   </button>
 
                   <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-1.5 text-stone-300 hover:text-stone-800 transition-all active:scale-90"><ChevronRight size={18} /></button>
-                  
-                  {!isToday && (
-                      <button onClick={() => setCurrentDate(new Date())} className="ml-1 p-1.5 bg-stone-100 text-stone-500 rounded-full hover:bg-stone-200 hover:text-stone-800 active:scale-90 transition-all" title="回今日">
-                          <RotateCcw size={12} />
-                      </button>
-                  )}
              </div>
              
              <div className="w-20 flex justify-end items-center gap-2">
@@ -351,6 +345,18 @@ export function App() {
                 onAddObjective={handleAddObjective} onUpdateObjective={handleUpdateObjective} onDeleteObjective={handleDeleteObjective}
             />
           )}
+
+          {/* 底部浮动按钮 (回今日) */}
+          {!isToday && (
+            <button 
+                onClick={() => setCurrentDate(new Date())} 
+                className="absolute bottom-6 right-6 z-[80] p-3 bg-stone-900 text-white rounded-full shadow-xl shadow-stone-900/20 active:scale-90 transition-all animate-in zoom-in duration-200"
+                title="回到今天"
+            >
+                <RotateCcw size={18} />
+            </button>
+          )}
+
         </main>
 
         {/* 底部导航 */}
