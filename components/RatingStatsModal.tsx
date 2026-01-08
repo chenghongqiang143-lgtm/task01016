@@ -6,11 +6,13 @@ import {
   startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
+  eachWeekOfInterval,
   format, 
   startOfMonth, 
   endOfMonth,
   isSameDay,
-  isSameMonth
+  isSameMonth,
+  isWithinInterval
 } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn, formatDate } from '../utils';
@@ -49,12 +51,24 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
     }
   }, [currentDate, range]);
 
-  const days = useMemo(() => eachDayOfInterval(periodInterval), [periodInterval]);
+  // 根据模式生成列（天 或 周）
+  const timeColumns = useMemo(() => {
+    if (range === 'week') {
+      return eachDayOfInterval(periodInterval);
+    } else {
+      // 月视图按周聚合
+      return eachWeekOfInterval(periodInterval, { weekStartsOn: 1 });
+    }
+  }, [periodInterval, range]);
 
   const statsSummary = useMemo(() => {
     let total = 0;
     let count = 0;
-    days.forEach(day => {
+    
+    // 无论当前视图如何，汇总总是基于每一天的实际数据
+    const daysToCalc = eachDayOfInterval(periodInterval);
+    
+    daysToCalc.forEach(day => {
       const key = formatDate(day);
       const rating = ratings[key];
       if (rating && rating.scores) {
@@ -64,15 +78,57 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
       }
     });
     return { total, count, avg: count > 0 ? (total / count).toFixed(1) : '0' };
-  }, [days, ratings]);
+  }, [periodInterval, ratings]);
 
-  const getScoreColor = (score: number) => {
-    if (score === 2) return 'bg-emerald-600 text-white';
-    if (score === 1) return 'bg-emerald-400 text-white';
+  const getScoreColor = (score: number, isAggregated: boolean = false) => {
     if (score === 0) return 'bg-stone-200 text-stone-500';
-    if (score === -1) return 'bg-rose-400 text-white';
-    if (score === -2) return 'bg-rose-600 text-white';
-    return 'bg-stone-50 border-stone-100';
+    
+    if (score > 0) {
+        // 对于周汇总，分数可能很高，根据强度调整颜色
+        if (isAggregated) {
+            if (score >= 10) return 'bg-emerald-700 text-white';
+            if (score >= 5) return 'bg-emerald-600 text-white';
+            return 'bg-emerald-400 text-white';
+        }
+        // 单日分数 (1, 2)
+        return score === 2 ? 'bg-emerald-600 text-white' : 'bg-emerald-400 text-white';
+    } else {
+        // 负分
+        if (isAggregated) {
+            if (score <= -10) return 'bg-rose-700 text-white';
+            if (score <= -5) return 'bg-rose-600 text-white';
+            return 'bg-rose-400 text-white';
+        }
+        return score === -2 ? 'bg-rose-600 text-white' : 'bg-rose-400 text-white';
+    }
+  };
+
+  const calculateColumnScore = (date: Date, itemId: string) => {
+      if (range === 'week') {
+          // 单日直接取值
+          return ratings[formatDate(date)]?.scores?.[itemId];
+      } else {
+          // 周汇总：计算该周内所有天的总和
+          const weekStart = date;
+          const weekEnd = endOfWeek(date, { weekStartsOn: 1 });
+          // 确保不超过本月范围
+          const actualStart = weekStart < periodInterval.start ? periodInterval.start : weekStart;
+          const actualEnd = weekEnd > periodInterval.end ? periodInterval.end : weekEnd;
+          
+          let sum = 0;
+          let hasData = false;
+          
+          // 遍历这周的每一天
+          const daysInWeek = eachDayOfInterval({ start: actualStart, end: actualEnd });
+          for (const day of daysInWeek) {
+              const score = ratings[formatDate(day)]?.scores?.[itemId];
+              if (score !== undefined) {
+                  sum += score;
+                  hasData = true;
+              }
+          }
+          return hasData ? sum : undefined;
+      }
   };
 
   if (!isOpen) return null;
@@ -114,7 +170,7 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-50/30 p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-stone-50/30 p-4 sm:p-6 space-y-6">
           
           {/* 总分卡片 */}
           <div className="grid grid-cols-2 gap-4">
@@ -140,22 +196,30 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
           <div className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <Calendar size={14} className="text-stone-300" />
-              <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">维度热力分析</h4>
+              <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">维度热力分析 ({range === 'month' ? '按周汇总' : '每日详情'})</h4>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm overflow-x-auto no-scrollbar">
-              <div className="min-w-[400px]">
+              {/* Removed min-w constraint to allow flex scaling on mobile */}
+              <div className="w-full">
                 {/* 日期头部 */}
                 <div className="flex mb-3">
-                  <div className="w-24 shrink-0"></div>
-                  <div className="flex-1 flex justify-around">
-                    {days.map(d => (
-                      <div key={d.toString()} className="w-6 flex flex-col items-center gap-0.5">
-                        <span className="text-[8px] font-black text-stone-300 uppercase">{format(d, 'EE', { locale: zhCN }).replace('周', '')}</span>
+                  <div className="w-20 shrink-0"></div> {/* Reduced width from 24 to 20 */}
+                  <div className="flex-1 flex justify-between gap-1">
+                    {timeColumns.map((d, idx) => (
+                      <div key={d.toString()} className="flex-1 flex flex-col items-center gap-0.5 min-w-[2rem]">
+                        <span className="text-[8px] font-black text-stone-300 uppercase">
+                            {range === 'week' 
+                                ? format(d, 'EE', { locale: zhCN }).replace('周', '') 
+                                : `W${idx + 1}`
+                            }
+                        </span>
                         <span className={cn(
-                          "text-[9px] font-bold",
-                          isSameDay(d, new Date()) ? "text-primary" : "text-stone-400"
-                        )}>{format(d, 'd')}</span>
+                          "text-[9px] font-bold whitespace-nowrap",
+                          range === 'week' && isSameDay(d, new Date()) ? "text-primary" : "text-stone-400"
+                        )}>
+                            {format(d, range === 'week' ? 'd' : 'M.d')}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -164,27 +228,26 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                 {/* 维度行 */}
                 <div className="space-y-2">
                   {ratingItems.map(item => (
-                    <div key={item.id} className="flex items-center group">
-                      <div className="w-24 shrink-0 pr-2">
-                        <div className="text-[11px] font-black text-stone-600 truncate group-hover:text-stone-900 transition-colors">
+                    <div key={item.id} className="flex items-center group h-8">
+                      <div className="w-20 shrink-0 pr-2">
+                        <div className="text-[10px] font-black text-stone-600 truncate group-hover:text-stone-900 transition-colors">
                           {item.name}
                         </div>
                       </div>
-                      <div className="flex-1 flex justify-around">
-                        {days.map(day => {
-                          const dateStr = formatDate(day);
-                          const score = ratings[dateStr]?.scores?.[item.id];
+                      <div className="flex-1 flex justify-between gap-1">
+                        {timeColumns.map(date => {
+                          const score = calculateColumnScore(date, item.id);
                           const hasData = score !== undefined;
                           
                           return (
                             <div 
-                              key={dateStr}
+                              key={date.toString()}
                               className={cn(
-                                "w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-black transition-all border shadow-sm",
-                                hasData ? getScoreColor(score) : "bg-stone-50 border-stone-100 opacity-20"
+                                "flex-1 min-w-[2rem] h-full rounded-md flex items-center justify-center text-[9px] font-black transition-all border shadow-sm",
+                                hasData ? getScoreColor(score!, range === 'month') : "bg-stone-50 border-stone-100 opacity-20"
                               )}
                             >
-                              {hasData ? (score > 0 ? `+${score}` : score) : ''}
+                              {hasData ? (score! > 0 ? `+${score}` : score) : ''}
                             </div>
                           );
                         })}
@@ -196,9 +259,9 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
             </div>
           </div>
 
-          {/* 图例 */}
+          {/* 图例 (Compact Row) */}
           <div className="mt-4 pt-4 border-t border-stone-100">
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-nowrap overflow-x-auto no-scrollbar items-center justify-between gap-2 w-full">
               {[
                 { s: 2, label: '极佳', color: 'bg-emerald-600', text: 'text-emerald-700', border: 'border-emerald-200' },
                 { s: 1, label: '较好', color: 'bg-emerald-400', text: 'text-emerald-600', border: 'border-emerald-100' },
@@ -206,9 +269,9 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                 { s: -1, label: '略差', color: 'bg-rose-400', text: 'text-rose-500', border: 'border-rose-100' },
                 { s: -2, label: '极差', color: 'bg-rose-600', text: 'text-rose-700', border: 'border-rose-200' },
               ].map(item => (
-                <div key={item.s} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border shadow-sm", item.border)}>
-                  <div className={cn("w-2 h-2 rounded-full", item.color)} />
-                  <span className={cn("text-[10px] font-bold", item.text)}>{item.s > 0 ? `+${item.s}` : item.s} {item.label}</span>
+                <div key={item.s} className={cn("flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white border shadow-sm shrink-0 flex-1 justify-center min-w-0", item.border)}>
+                  <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", item.color)} />
+                  <span className={cn("text-[8px] font-bold whitespace-nowrap truncate", item.text)}>{item.s > 0 ? `+${item.s}` : item.s} {item.label}</span>
                 </div>
               ))}
             </div>
