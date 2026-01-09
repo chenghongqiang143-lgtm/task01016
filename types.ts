@@ -1,6 +1,13 @@
 
 export type TargetMode = 'duration' | 'count';
 
+export interface TimeBlock {
+  id: string;
+  taskId: string;
+  startTime: number; // minutes from midnight
+  endTime: number; // minutes from midnight
+}
+
 export interface TaskTarget {
   mode: TargetMode;
   value: number; // 代表小时或次数
@@ -74,7 +81,14 @@ export interface Redemption {
   shopItemId: string;
   itemName: string;
   cost: number;
-  date: string;
+  date: string; // yyyy-MM-dd
+  timestamp?: number; // timestamp for sorting
+}
+
+export interface ReviewTemplate {
+  id: string;
+  title: string;
+  content: string;
 }
 
 // 4页：安排，记录，打分，设置
@@ -94,9 +108,12 @@ export interface AppState {
   ratingItems: RatingItem[];
   shopItems: ShopItem[];
   redemptions: Redemption[];
+  reviewTemplates: ReviewTemplate[]; // New: Templates for daily review
   schedule: Record<string, DayData>;
+  scheduleBlocks?: Record<string, TimeBlock[]>; // New: Time blocks for schedule
   recurringSchedule: Record<number, string[]>;
   records: Record<string, DayData>;
+  recordBlocks?: Record<string, TimeBlock[]>; // New: Time blocks for records
   ratings: Record<string, DayRating>;
   rolloverSettings: RolloverSettings;
   themeColor: string; // Theme Color Hex

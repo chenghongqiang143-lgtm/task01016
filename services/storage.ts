@@ -1,5 +1,5 @@
 
-import { AppState, Task, RatingItem, ShopItem, Objective } from '../types';
+import { AppState, Task, RatingItem, ShopItem, Objective, ReviewTemplate } from '../types';
 import { generateId } from '../utils';
 
 const STORAGE_KEY = 'chronos_flow_data_v1';
@@ -52,6 +52,19 @@ export const DEFAULT_SHOP_ITEMS: ShopItem[] = [
   { id: 's5', name: '懒惰一天', cost: 100, icon: '🛌' },
 ];
 
+export const DEFAULT_REVIEW_TEMPLATES: ReviewTemplate[] = [
+  {
+    id: 'rt_kpt',
+    title: 'KPT 复盘法',
+    content: "## Keep (保持)\n- \n\n## Problem (问题)\n- \n\n## Try (尝试)\n- "
+  },
+  {
+    id: 'rt_daily3',
+    title: '每日三问',
+    content: "1. 今天最重要的一件事做完了吗？\n- \n\n2. 今天有什么值得记录的小确幸？\n- \n\n3. 明天最期待的事情是什么？\n- "
+  }
+];
+
 export const getInitialState = (): AppState => ({
   objectives: DEFAULT_OBJECTIVES,
   tasks: DEFAULT_TASKS,
@@ -60,9 +73,12 @@ export const getInitialState = (): AppState => ({
   ratingItems: DEFAULT_RATING_ITEMS,
   shopItems: DEFAULT_SHOP_ITEMS,
   redemptions: [],
+  reviewTemplates: DEFAULT_REVIEW_TEMPLATES,
   schedule: {},
+  scheduleBlocks: {},
   recurringSchedule: {},
   records: {},
+  recordBlocks: {},
   ratings: {},
   rolloverSettings: { enabled: false, maxDays: 3 },
   themeColor: '#6366f1', // Indigo 500
@@ -89,8 +105,11 @@ export const loadState = (): AppState => {
     if (!parsed.ratings) parsed.ratings = {};
     if (!parsed.shopItems) parsed.shopItems = DEFAULT_SHOP_ITEMS;
     if (!parsed.redemptions) parsed.redemptions = [];
+    if (!parsed.reviewTemplates) parsed.reviewTemplates = DEFAULT_REVIEW_TEMPLATES;
     if (!parsed.schedule) parsed.schedule = {};
+    if (!parsed.scheduleBlocks) parsed.scheduleBlocks = {};
     if (!parsed.records) parsed.records = {};
+    if (!parsed.recordBlocks) parsed.recordBlocks = {};
     if (!parsed.rolloverSettings) parsed.rolloverSettings = { enabled: false, maxDays: 3 };
     if (!parsed.themeColor) parsed.themeColor = '#6366f1';
 

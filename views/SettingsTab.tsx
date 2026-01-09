@@ -1,48 +1,44 @@
-
-import React, { useState, useMemo, useRef } from 'react';
-import { Task, DayData, Objective, HOURS, RolloverSettings } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Task, Objective, DayData, RolloverSettings, HOURS } from '../types';
+import { cn, formatDate } from '../utils';
+import { useModalBackHandler } from '../hooks';
+import { 
+  Check, CalendarClock, Palette, Database, FileJson, ChevronDown, Plus, 
+  Edit2, ArrowUp, ArrowDown, Layers, X, Copy, Upload, Trash2, AlertTriangle, Download
+} from 'lucide-react';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { ObjectiveEditorModal } from '../components/ObjectiveEditorModal';
-import { Plus, ArrowUp, ArrowDown, Edit2, Check, Copy, ClipboardPaste, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson, Layers, ChevronDown, Palette } from 'lucide-react';
-import { cn, formatDate } from '../utils';
-import { format } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
-import { useModalBackHandler } from '../hooks';
 
 interface SettingsTabProps {
   tasks: Task[];
-  categoryOrder: string[]; 
-  onAddTask: (task: Task) => void;
+  categoryOrder: string[];
+  onAddTask: (task: Omit<Task, 'id'>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
-  onUpdateCategoryOrder: (newOrder: string[]) => void;
-  showInstallButton: boolean;
-  onInstall: () => void;
-  onExportData: () => void;
-  onImportData: (dataStr: string) => void;
-  onClearData: () => void;
-  allSchedules: Record<string, DayData>;
+  onUpdateCategoryOrder: (order: string[]) => void;
+  objectives: Objective[];
+  onAddObjective: (obj: Objective) => void;
+  onUpdateObjective: (obj: Objective) => void;
+  onDeleteObjective: (id: string) => void;
   allRecords: Record<string, DayData>;
   currentDate: Date;
-  objectives?: Objective[];
-  onAddObjective?: (obj: Objective) => void;
-  onUpdateObjective?: (obj: Objective) => void;
-  onDeleteObjective?: (id: string) => void;
+  onExportData: () => void;
+  onImportData: (data: string) => void;
+  onClearData: () => void;
   rolloverSettings: RolloverSettings;
   onUpdateRolloverSettings: (settings: RolloverSettings) => void;
   themeColor: string;
   onUpdateThemeColor: (color: string) => void;
+  allSchedules?: Record<string, DayData>;
+  showInstallButton?: boolean;
+  onInstall?: () => void;
 }
 
 const THEME_COLORS = [
-  '#6366f1', // Indigo (Default)
-  '#10b981', // Emerald
-  '#f43f5e', // Rose
-  '#f59e0b', // Amber
-  '#0ea5e9', // Sky
-  '#8b5cf6', // Violet
-  '#64748b', // Slate
-  '#1e293b', // Slate 800
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
+  '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', 
+  '#ec4899', '#64748b', '#78716c', '#57534e', '#1e293b'
 ];
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
@@ -70,15 +66,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isObjModalOpen, setIsObjModalOpen] = useState(false);
   const [isDataOverlayOpen, setIsDataOverlayOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // const [showClearConfirm, setShowClearConfirm] = useState(false); // Unused in snippet but maybe useful
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [importText, setImportText] = useState('');
   
-  // Default to false (folded) as requested
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
 
-  // Hook for inline modals
   useModalBackHandler(isDataOverlayOpen, () => setIsDataOverlayOpen(false));
   useModalBackHandler(isBackupModalOpen, () => setIsBackupModalOpen(false));
 
@@ -260,6 +254,42 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
            </div>
         </section>
 
+        {/* 数据安全与维护区域 */}
+        <section className="space-y-2">
+           <div className="px-1">
+              <h3 className={sectionTitleClass}>数据安全</h3>
+           </div>
+           
+           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm flex flex-col items-center gap-3">
+              <div className="flex items-center gap-3 w-full">
+                  <div className="p-3 bg-stone-50 text-stone-900 rounded-xl shadow-inner border border-stone-100 shrink-0">
+                      <Database size={18} />
+                  </div>
+                  <div className="flex-1">
+                      <h4 className="font-black text-stone-900 text-xs tracking-tight leading-tight">本地存储</h4>
+                      <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
+                          所有数据均保存在本地
+                      </p>
+                  </div>
+              </div>
+
+              <div className="w-full grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setIsBackupModalOpen(true); }}
+                    className="w-full py-3 px-3 bg-stone-50 border border-stone-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-800 hover:bg-stone-100 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <FileJson size={14} /> 备份恢复
+                  </button>
+                  <button 
+                      onClick={() => setIsDataOverlayOpen(true)}
+                      className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:opacity-90"
+                  >
+                      清空记录
+                  </button>
+              </div>
+           </div>
+        </section>
+
         {/* 分类管理 (可折叠) */}
         <section className="space-y-2">
            <div 
@@ -352,159 +382,115 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                </div>
            )}
         </section>
-
-        {/* 数据安全与维护区域 */}
-        <section className="space-y-2">
-           <div className="px-1">
-              <h3 className={sectionTitleClass}>数据安全</h3>
-           </div>
-           
-           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm flex flex-col items-center gap-3">
-              <div className="flex items-center gap-3 w-full">
-                  <div className="p-3 bg-stone-50 text-stone-900 rounded-xl shadow-inner border border-stone-100 shrink-0">
-                      <Database size={18} />
-                  </div>
-                  <div className="flex-1">
-                      <h4 className="font-black text-stone-900 text-xs tracking-tight leading-tight">本地存储</h4>
-                      <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mt-0.5">
-                          所有数据均保存在本地
-                      </p>
-                  </div>
-              </div>
-
-              <div className="w-full grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setIsBackupModalOpen(true); }}
-                    className="w-full py-3 px-3 bg-stone-50 border border-stone-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-800 hover:bg-stone-100 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    <FileJson size={14} /> 备份恢复
-                  </button>
-                  <button 
-                      onClick={() => setIsDataOverlayOpen(true)}
-                      className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:opacity-90"
-                  >
-                      清空记录
-                  </button>
-              </div>
-           </div>
-        </section>
       </div>
 
       {/* 备份与恢复弹窗 */}
       {isBackupModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[1.5rem] w-full max-w-sm overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[80vh]">
-                 <div className="px-6 py-4 bg-stone-50 border-b border-stone-100 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2.5">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-[1.5rem] w-full max-w-sm flex flex-col border border-stone-300 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                <div className="px-5 py-4 bg-stone-50 border-b border-stone-100 flex justify-between items-center shrink-0">
+                    <div className="flex items-center gap-2">
                         <FileJson size={16} className="text-stone-900" />
-                        <h3 className="font-black text-stone-900 text-[13px]">数据备份</h3>
+                        <h3 className="font-black text-stone-800 text-[13px]">数据备份与恢复</h3>
                     </div>
-                    <button onClick={() => { setIsBackupModalOpen(false); setImportText(''); }} className="p-1.5 hover:bg-stone-200 rounded-full transition-colors text-stone-400">
-                        <X size={18} />
-                    </button>
+                    <button onClick={() => setIsBackupModalOpen(false)} className="p-1.5 hover:bg-stone-200 rounded-full text-stone-400"><X size={18} /></button>
                 </div>
-
-                <div className="p-5 space-y-5 overflow-y-auto custom-scrollbar">
-                    <div className="space-y-2">
-                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">导出数据</label>
-                        <button 
-                            onClick={() => { onExportData(); }}
-                            className="w-full py-3.5 bg-primary text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Copy size={14} /> 复制到剪切板
-                        </button>
-                    </div>
+                <div className="p-5 space-y-4">
+                    <button 
+                        onClick={onExportData}
+                        className="w-full py-3.5 bg-stone-900 text-white rounded-xl text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Copy size={14} /> 复制当前数据备份
+                    </button>
                     
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-stone-100"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                            <span className="bg-white px-2 text-stone-300 font-bold uppercase text-[10px]">恢复数据</span>
+                            <span className="px-2 bg-white text-stone-300 font-bold uppercase text-[9px]">OR</span>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">粘贴备份数据</label>
+                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">恢复数据 (粘贴备份内容)</label>
                         <textarea 
                             value={importText}
                             onChange={(e) => setImportText(e.target.value)}
-                            placeholder='请将备份的JSON文本粘贴到此处...'
-                            className="w-full h-24 p-3 bg-stone-50 border border-stone-200 rounded-xl text-[10px] font-mono text-stone-600 focus:outline-none focus:border-stone-400 resize-none"
+                            className="w-full h-32 p-3 bg-stone-50 border border-stone-100 rounded-xl text-[10px] font-mono focus:outline-none focus:border-stone-900 focus:bg-white transition-all resize-none"
+                            placeholder='{"objectives": [...], "tasks": [...] ...}'
                         />
-                        <button 
-                            onClick={handleImportSubmit}
-                            disabled={!importText.trim()}
-                            className="w-full py-3.5 bg-white border-2 border-stone-100 text-stone-600 rounded-xl text-[11px] font-black uppercase tracking-wider hover:bg-stone-50 hover:border-stone-300 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ClipboardPaste size={14} /> 恢复数据
-                        </button>
                     </div>
-                </div>
-            </div>
-        </div>
-      )}
-
-      {/* 清空数据警告弹窗 */}
-      {isDataOverlayOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white rounded-[1.5rem] w-full max-w-sm overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
-                <div className="px-6 py-4 bg-stone-50 border-b border-stone-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Database size={16} className="text-stone-900" />
-                        <h3 className="font-black text-stone-900 text-[13px]">数据清除</h3>
-                    </div>
-                    <button onClick={() => { setIsDataOverlayOpen(false); setShowClearConfirm(false); }} className="p-1.5 hover:bg-stone-200 rounded-full transition-colors text-stone-400">
-                        <X size={18} />
+                    <button 
+                        onClick={handleImportSubmit}
+                        disabled={!importText.trim()}
+                        className="w-full py-3.5 bg-white border border-stone-200 text-stone-800 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-stone-50"
+                    >
+                        <Upload size={14} /> 恢复数据
                     </button>
                 </div>
-
-                <div className="p-6 space-y-4">
-                    <div className="pt-2">
-                        <button 
-                            onClick={() => {
-                                if (showClearConfirm) {
-                                    onClearData();
-                                    setIsDataOverlayOpen(false);
-                                    setShowClearConfirm(false);
-                                } else {
-                                    setShowClearConfirm(true);
-                                }
-                            }}
-                            className={cn(
-                                "w-full py-4 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 uppercase tracking-wider",
-                                showClearConfirm 
-                                    ? "bg-rose-600 text-white shadow-xl scale-105" 
-                                    : "bg-white border-2 border-rose-50 text-rose-500 hover:bg-rose-50"
-                            )}
-                        >
-                            {showClearConfirm ? (
-                                <><AlertCircle size={16} strokeWidth={3} /> 确认清除记录？</>
-                            ) : (
-                                <><Trash2 size={16} /> 清除所有记录</>
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="px-6 py-4 bg-stone-50 border-t border-stone-100">
-                    <p className="text-[9px] text-stone-400 font-bold leading-relaxed text-center uppercase tracking-[0.1em]">
-                        警告：此操作将清空所有历史数据<br/>但会保留您的任务模板与分类设置
-                    </p>
-                </div>
             </div>
-        </div>
+          </div>
       )}
 
-      <ObjectiveEditorModal isOpen={isObjModalOpen} onClose={() => setIsObjModalOpen(false)} objective={editingObjective} onSave={(obj) => obj.id ? onUpdateObjective?.(obj) : onAddObjective?.(obj)} onDelete={onDeleteObjective} />
+      {/* 清空数据确认弹窗 */}
+      {isDataOverlayOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-red-900/40 p-4 backdrop-blur-sm">
+             <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center space-y-4">
+                 <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center">
+                     <AlertTriangle size={24} />
+                 </div>
+                 <div className="space-y-1">
+                     <h3 className="font-black text-stone-900">确认清空所有记录？</h3>
+                     <p className="text-xs text-stone-500 font-medium">此操作将删除所有打卡、待办与评分记录。<br/>任务模板与设置将保留。</p>
+                 </div>
+                 <div className="flex gap-3 w-full pt-2">
+                     <button 
+                         onClick={() => setIsDataOverlayOpen(false)}
+                         className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl text-xs font-bold"
+                     >
+                         取消
+                     </button>
+                     <button 
+                         onClick={() => { onClearData(); setIsDataOverlayOpen(false); }}
+                         className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-500/30"
+                     >
+                         确认清空
+                     </button>
+                 </div>
+             </div>
+          </div>
+      )}
+
+      {/* Modals */}
       <TaskEditorModal 
-        isOpen={isTaskModalOpen} 
-        onClose={() => setIsTaskModalOpen(false)} 
-        task={editingTask} 
-        onSave={(t) => t.id ? onUpdateTask(t) : onAddTask(t)} 
-        onDelete={onDeleteTask} 
-        objectives={objectives} 
-        simplified={false}
+          isOpen={isTaskModalOpen} 
+          onClose={() => { setIsTaskModalOpen(false); setEditingTask(null); }} 
+          task={editingTask} 
+          onSave={(task) => { 
+             if (editingTask && editingTask.id) {
+                 onUpdateTask(task);
+             } else {
+                 onAddTask(task);
+             }
+          }} 
+          onDelete={onDeleteTask} 
+          objectives={objectives}
+          onAddObjective={onAddObjective} // Allow creating categories from task editor
+      />
+      
+      <ObjectiveEditorModal 
+          isOpen={isObjModalOpen} 
+          onClose={() => { setIsObjModalOpen(false); setEditingObjective(null); }} 
+          objective={editingObjective} 
+          onSave={(obj) => {
+             if (editingObjective) {
+                 onUpdateObjective(obj);
+             } else {
+                 onAddObjective(obj);
+             }
+          }}
+          onDelete={onDeleteObjective}
       />
     </div>
   );
