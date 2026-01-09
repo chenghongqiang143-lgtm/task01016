@@ -188,7 +188,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                       onClick={() => setIsRecurringMode(!isRecurringMode)}
                       className={cn(
                           "px-2 py-0.5 rounded-md text-[8px] font-bold uppercase transition-all flex items-center gap-1 border",
-                          isRecurringMode ? "bg-stone-900 text-white border-stone-900" : "bg-stone-50 text-stone-400 border-stone-100 hover:border-stone-300"
+                          isRecurringMode ? "bg-primary text-white border-primary" : "bg-stone-50 text-stone-400 border-stone-100 hover:border-stone-300"
                       )}
                   >
                       <Repeat size={10} /> {isRecurringMode ? '已开启' : '循环'}
@@ -225,7 +225,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                                     className={cn(
                                         "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none touch-manipulation",
                                         isSelected 
-                                            ? "bg-stone-900 border-stone-900 text-white z-10" 
+                                            ? "bg-primary border-primary text-white z-10" 
                                             : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
                                     )}
                                 >
@@ -274,10 +274,10 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                          const isSelected = isSameDay(day, currentDate);
                          return (
                              <div key={day.toString()} className={cn("flex-1 flex flex-col items-center justify-center py-2 border-r border-stone-50/50", isSelected ? "bg-stone-50/50" : "")}>
-                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-indigo-500" : "text-stone-300")}>
+                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-primary" : "text-stone-400")}>
                                      {format(day, 'EEE', { locale: zhCN })}
                                  </span>
-                                 <span className={cn("text-[10px] font-bold leading-none mt-0.5", isToday ? "text-indigo-600" : "text-stone-600")}>
+                                 <span className={cn("text-xs font-black leading-none mt-0.5", isToday ? "text-primary" : "text-stone-600")}>
                                      {format(day, 'd')}
                                  </span>
                              </div>
@@ -381,7 +381,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                         onClick={() => { setViewMode(m); setActiveSide(null); }}
                         className={cn(
                             "px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
-                            viewMode === m ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-600"
+                            viewMode === m ? "bg-white text-primary shadow-sm" : "text-stone-400 hover:text-stone-600"
                         )}
                     >
                         {m === 'day' && <Clock size={12} />}

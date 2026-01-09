@@ -39,7 +39,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       <div className="bg-white rounded-[1.5rem] w-full max-w-md overflow-hidden flex flex-col max-h-[80vh] border border-stone-300">
         <div className="flex justify-between items-center px-6 py-4 bg-stone-50 border-b border-stone-200">
           <div className="flex items-center gap-3">
-             <div className="p-2 bg-indigo-50 rounded-full text-indigo-600 border border-indigo-100">
+             <div className="p-2 bg-primary/10 rounded-full text-primary border border-primary/20">
                 <PenLine size={18} />
              </div>
              <div>
@@ -67,7 +67,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         <div className="p-4 bg-stone-50 border-t border-stone-200 flex justify-end">
              <button
                 onClick={handleSave}
-                className="px-6 py-3 rounded-xl bg-stone-900 text-white font-bold text-sm hover:bg-stone-800 transition-all flex items-center gap-2 active:scale-95"
+                className="px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2 active:scale-95"
              >
                  <Save size={18} />
                  保存记录

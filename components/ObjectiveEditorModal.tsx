@@ -139,7 +139,7 @@ export const ObjectiveEditorModal: React.FC<ObjectiveEditorModalProps> = ({
                  <button 
                     type="submit" 
                     disabled={!title.trim()}
-                    className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-stone-800 active:scale-95 transition-all shadow-lg disabled:opacity-50"
+                    className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-lg disabled:opacity-50"
                  >
                    <Save size={16} /> 保存设定
                  </button>

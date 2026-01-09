@@ -33,7 +33,7 @@
         theme: {
           extend: {
             colors: {
-              primary: '#6366f1', // Indigo 500
+              primary: 'rgb(var(--color-primary) / <alpha-value>)', 
               secondary: '#10b981', // Emerald 500
               accent: '#f43f5e', // Rose 500
               background: '#fafaf9', // Stone 50
@@ -70,6 +70,9 @@
 }
 </script>
 <style>
+  :root {
+    --color-primary: 99 102 241; /* Default Indigo 500 in RGB */
+  }
   body {
     -webkit-tap-highlight-color: transparent;
   }
@@ -226,6 +229,5 @@ self.addEventListener('fetch', (event) => {
   );
 });
 </script>
-    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { Task, DayData, Objective, HOURS, RolloverSettings } from '../types';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { ObjectiveEditorModal } from '../components/ObjectiveEditorModal';
-import { Plus, ArrowUp, ArrowDown, Edit2, Check, Copy, ClipboardPaste, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson, Layers, ChevronDown } from 'lucide-react';
+import { Plus, ArrowUp, ArrowDown, Edit2, Check, Copy, ClipboardPaste, Trash2, Database, X, AlertCircle, CalendarClock, Target, Save, FileJson, Layers, ChevronDown, Palette } from 'lucide-react';
 import { cn, formatDate } from '../utils';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -30,7 +30,20 @@ interface SettingsTabProps {
   onDeleteObjective?: (id: string) => void;
   rolloverSettings: RolloverSettings;
   onUpdateRolloverSettings: (settings: RolloverSettings) => void;
+  themeColor: string;
+  onUpdateThemeColor: (color: string) => void;
 }
+
+const THEME_COLORS = [
+  '#6366f1', // Indigo (Default)
+  '#10b981', // Emerald
+  '#f43f5e', // Rose
+  '#f59e0b', // Amber
+  '#0ea5e9', // Sky
+  '#8b5cf6', // Violet
+  '#64748b', // Slate
+  '#1e293b', // Slate 800
+];
 
 export const SettingsTab: React.FC<SettingsTabProps> = ({
   tasks,
@@ -49,7 +62,9 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   onImportData,
   onClearData,
   rolloverSettings,
-  onUpdateRolloverSettings
+  onUpdateRolloverSettings,
+  themeColor,
+  onUpdateThemeColor
 }) => {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isObjModalOpen, setIsObjModalOpen] = useState(false);
@@ -169,13 +184,14 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
         {/* 系统规则设置区域 */}
         <section className="space-y-2">
            <div className="px-1">
-              <h3 className={sectionTitleClass}>系统规则</h3>
+              <h3 className={sectionTitleClass}>系统设置</h3>
            </div>
 
-           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm space-y-3">
+           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm space-y-4">
+              {/* Rollover Settings */}
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                      <div className={cn("p-2 rounded-lg transition-colors", rolloverSettings.enabled ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-400")}>
+                      <div className={cn("p-2 rounded-lg transition-colors", rolloverSettings.enabled ? "bg-primary text-white" : "bg-stone-100 text-stone-400")}>
                           <CalendarClock size={16} />
                       </div>
                       <div>
@@ -187,7 +203,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                       onClick={() => onUpdateRolloverSettings({ ...rolloverSettings, enabled: !rolloverSettings.enabled })}
                       className={cn(
                           "w-8 h-5 rounded-full p-0.5 transition-colors duration-300 ease-in-out relative",
-                          rolloverSettings.enabled ? "bg-stone-900" : "bg-stone-200"
+                          rolloverSettings.enabled ? "bg-primary" : "bg-stone-200"
                       )}
                   >
                       <div className={cn(
@@ -198,7 +214,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               </div>
 
               {rolloverSettings.enabled && (
-                  <div className="pt-3 border-t border-stone-50 animate-in fade-in slide-in-from-top-4">
+                  <div className="pt-2 border-t border-stone-50 animate-in fade-in slide-in-from-top-4">
                       <div className="flex items-center justify-between px-1">
                           <span className="text-[10px] font-bold text-stone-500">最大顺延天数</span>
                           <div className="flex items-center gap-3">
@@ -210,12 +226,37 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                   step="1"
                                   value={rolloverSettings.maxDays}
                                   onChange={(e) => onUpdateRolloverSettings({ ...rolloverSettings, maxDays: parseInt(e.target.value) })}
-                                  className="w-20 h-1.5 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-stone-900"
+                                  className="w-20 h-1.5 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-primary"
                               />
                           </div>
                       </div>
                   </div>
               )}
+
+              {/* Theme Color Picker */}
+              <div className="pt-3 border-t border-stone-100/60 space-y-3">
+                  <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-stone-100 text-stone-500">
+                          <Palette size={16} />
+                      </div>
+                      <div>
+                          <h4 className="font-black text-stone-800 text-xs">主题色彩</h4>
+                      </div>
+                  </div>
+                  <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+                      {THEME_COLORS.map(color => (
+                          <button
+                            key={color}
+                            onClick={() => onUpdateThemeColor(color)}
+                            className={cn(
+                                "w-6 h-6 rounded-full border-2 transition-all shrink-0 shadow-sm",
+                                themeColor === color ? "border-stone-900 scale-110" : "border-white hover:scale-105"
+                            )}
+                            style={{ backgroundColor: color }}
+                          />
+                      ))}
+                  </div>
+              </div>
            </div>
         </section>
 
@@ -236,7 +277,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   setEditingObjective(null); 
                   setIsObjModalOpen(true); 
                 }} 
-                className="px-2 py-1.5 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-all shadow-sm active:scale-90 flex items-center gap-1"
+                className="px-2 py-1.5 bg-primary text-white rounded-lg hover:opacity-90 transition-all shadow-sm active:scale-90 flex items-center gap-1"
              >
                 <Plus size={12} /> <span className="text-[9px] font-bold">新分类</span>
              </button>
@@ -340,7 +381,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   </button>
                   <button 
                       onClick={() => setIsDataOverlayOpen(true)}
-                      className="w-full py-3 bg-stone-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:bg-stone-800"
+                      className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:opacity-90"
                   >
                       清空记录
                   </button>
@@ -368,7 +409,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                         <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">导出数据</label>
                         <button 
                             onClick={() => { onExportData(); }}
-                            className="w-full py-3.5 bg-stone-900 text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-lg hover:bg-stone-800 active:scale-95 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-3.5 bg-primary text-white rounded-xl text-[11px] font-black uppercase tracking-wider shadow-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
                             <Copy size={14} /> 复制到剪切板
                         </button>

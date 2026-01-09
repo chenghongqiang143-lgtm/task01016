@@ -65,6 +65,7 @@ export const getInitialState = (): AppState => ({
   records: {},
   ratings: {},
   rolloverSettings: { enabled: false, maxDays: 3 },
+  themeColor: '#6366f1', // Indigo 500
 });
 
 export const loadState = (): AppState => {
@@ -91,6 +92,7 @@ export const loadState = (): AppState => {
     if (!parsed.schedule) parsed.schedule = {};
     if (!parsed.records) parsed.records = {};
     if (!parsed.rolloverSettings) parsed.rolloverSettings = { enabled: false, maxDays: 3 };
+    if (!parsed.themeColor) parsed.themeColor = '#6366f1';
 
     return parsed as AppState;
   } catch (e) {

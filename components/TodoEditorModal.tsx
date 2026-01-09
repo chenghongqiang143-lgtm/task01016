@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Todo, Objective, SubTask, TargetMode } from '../types';
-import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star, AlertCircle } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star, AlertCircle, Flag, Hourglass, History } from 'lucide-react';
 import { cn, generateId, formatDate } from '../utils';
 import { useModalBackHandler } from '../hooks';
 
@@ -40,8 +40,13 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
   const [targetMode, setTargetMode] = useState<TargetMode>('duration');
   const [targetValue, setTargetValue] = useState('');
   const [targetFrequency, setTargetFrequency] = useState('1');
+  
+  // Long Term Goals
+  const [totalValue, setTotalValue] = useState('');
+  const [deadline, setDeadline] = useState('');
+  const [actualStartDate, setActualStartDate] = useState('');
 
-  // Initial load effect - runs only when modal opens or todo ID changes
+  // Initial load effect
   useEffect(() => {
     if (isOpen) {
       if (todo) {
@@ -49,23 +54,29 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setObjectiveId(todo.objectiveId || 'none');
         setIsFrog(todo.isFrog);
         setStartDate(todo.startDate || '');
+        setActualStartDate(todo.actualStartDate || todo.startDate || ''); // Default actual start to planned start if missing
         setSubTasks(todo.subTasks || []);
         setShowDeleteConfirm(false);
         if (todo.targets) {
             setTargetValue(todo.targets.value ? todo.targets.value.toString() : '');
             setTargetFrequency(todo.targets.frequency.toString());
             setTargetMode(todo.targets.mode || 'duration');
+            setTotalValue(todo.targets.totalValue ? todo.targets.totalValue.toString() : '');
+            setDeadline(todo.targets.deadline || '');
         } else {
             setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
+            setTotalValue(''); setDeadline('');
         }
       } else {
         setTitle('');
         setObjectiveId('none');
         setIsFrog(false);
-        // Only use defaultDate for new todos
-        setStartDate(formatDate(defaultDate));
+        const dateStr = formatDate(defaultDate);
+        setStartDate(dateStr);
+        setActualStartDate(dateStr);
         setSubTasks([]);
         setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
+        setTotalValue(''); setDeadline('');
         setShowDeleteConfirm(false);
       }
     }
@@ -95,19 +106,28 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
     let targets = undefined;
     const val = parseFloat(targetValue);
     const freq = parseInt(targetFrequency);
+    const total = parseFloat(totalValue);
+    
     if (!isNaN(val) && val > 0 && !isNaN(freq) && freq > 0) {
-        targets = { mode: targetMode, value: val, frequency: freq };
+        targets = { 
+            mode: targetMode, 
+            value: val, 
+            frequency: freq,
+            totalValue: (!isNaN(total) && total > 0) ? total : undefined,
+            deadline: deadline || undefined
+        };
     }
 
     onSave({
       id: todo ? todo.id : generateId(),
       title: title.trim(),
       objectiveId,
-      templateId: todo?.templateId, // 关键修复：保存时保留模板ID关联
+      templateId: todo?.templateId, 
       isFrog,
       isCompleted: todo ? todo.isCompleted : false,
       subTasks,
       startDate: startDate || undefined,
+      actualStartDate: actualStartDate || undefined,
       createdAt: todo ? todo.createdAt : new Date().toISOString(),
       targets // Add targets
     });
@@ -166,7 +186,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                 className={cn(
                   "px-4 py-2 rounded-lg border text-[10px] font-black transition-all",
                   objectiveId === 'none' 
-                    ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                    ? "bg-primary text-white border-primary shadow-sm" 
                     : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
                 )}
               >
@@ -180,7 +200,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   className={cn(
                     "px-4 py-2 rounded-lg border text-[10px] font-black transition-all flex items-center gap-2",
                     objectiveId === obj.id 
-                      ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                      ? "bg-primary text-white border-primary shadow-sm" 
                       : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
                   )}
                 >
@@ -206,20 +226,47 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
           {/* 量化目标 (类似 Task Editor) */}
           <div className="bg-stone-50/50 rounded-xl p-3 border border-stone-100 space-y-2.5">
               <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">量化目标 (可选)</span>
+                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">单次目标 (可选)</span>
                   <div className="flex bg-white rounded-lg p-0.5 border border-stone-100">
-                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'duration' ? "bg-stone-900 text-white" : "text-stone-400")}>时长</button>
-                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'count' ? "bg-stone-900 text-white" : "text-stone-400")}>次数</button>
+                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'duration' ? "bg-primary text-white" : "text-stone-400")}>时长</button>
+                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'count' ? "bg-primary text-white" : "text-stone-400")}>次数</button>
                   </div>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-0.5">
-                      <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">{targetMode === 'duration' ? <Clock size={8} /> : <Hash size={8} />} {targetMode === 'duration' ? '目标(h)' : '次数'}</label>
+                      <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">{targetMode === 'duration' ? <Clock size={8} /> : <Hash size={8} />} {targetMode === 'duration' ? '每次(h)' : '次数'}</label>
                       <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="0" />
                   </div>
                   <div className="space-y-0.5">
                       <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5"><LayoutList size={8} /> 周期(天)</label>
                       <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="1" />
+                  </div>
+              </div>
+
+               {/* Long Term Goal Section */}
+               <div className="pt-2 border-t border-stone-100/50 mt-1 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">长期目标与期限</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-0.5">
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
+                              <Flag size={8} /> 总量
+                          </label>
+                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="无" />
+                      </div>
+                      <div className="space-y-0.5">
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
+                             <Hourglass size={8} /> 截止日期
+                          </label>
+                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300 min-h-[28px]" />
+                      </div>
+                      <div className="col-span-2 space-y-0.5">
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
+                             <History size={8} /> 项目起始日 (用于计算实际已行天数)
+                          </label>
+                          <input type="date" value={actualStartDate} onChange={(e) => setActualStartDate(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300 min-h-[28px]" />
+                      </div>
                   </div>
               </div>
           </div>
@@ -311,7 +358,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   <button 
                     type="button" 
                     onClick={handleSubmit}
-                    className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-stone-800 transition-all shadow-lg active:scale-[0.98]"
+                    className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
                   >
                     <Save size={18} /> 保存任务
                   </button>

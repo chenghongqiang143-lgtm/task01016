@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Task, TargetMode, Objective } from '../types';
-import { X, Target, Type, Trash2, Save, LayoutList, Hash, Clock, Plus, AlertCircle } from 'lucide-react';
+import { X, Target, Type, Trash2, Save, LayoutList, Hash, Clock, Plus, AlertCircle, Calendar, Flag } from 'lucide-react';
 import { cn, generateId } from '../utils';
 import { ObjectiveEditorModal } from './ObjectiveEditorModal';
 import { useModalBackHandler } from '../hooks';
@@ -41,9 +41,14 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   const [categoryInput, setCategoryInput] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // Target States
   const [targetMode, setTargetMode] = useState<TargetMode>('duration');
   const [targetValue, setTargetValue] = useState('');
   const [targetFrequency, setTargetFrequency] = useState('1');
+  const [totalValue, setTotalValue] = useState('');
+  const [deadline, setDeadline] = useState('');
+  
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
@@ -62,12 +67,16 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
               setTargetValue(task.targets.value ? task.targets.value.toString() : '');
               setTargetFrequency(task.targets.frequency.toString());
               setTargetMode(task.targets.mode || 'duration');
+              setTotalValue(task.targets.totalValue ? task.targets.totalValue.toString() : '');
+              setDeadline(task.targets.deadline || '');
           } else {
               setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
+              setTotalValue(''); setDeadline('');
           }
         } else {
           setName(''); setCategoryId(''); setCategoryInput(''); setColor('#3b82f6');
           setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
+          setTotalValue(''); setDeadline('');
           setShowDeleteConfirm(false);
         }
     }
@@ -82,8 +91,16 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
     if (!simplified) {
         const val = parseFloat(targetValue);
         const freq = parseInt(targetFrequency);
+        const total = parseFloat(totalValue);
+        
         if (!isNaN(val) && val > 0 && !isNaN(freq) && freq > 0) {
-            targets = { mode: targetMode, value: val, frequency: freq };
+            targets = { 
+                mode: targetMode, 
+                value: val, 
+                frequency: freq,
+                totalValue: (!isNaN(total) && total > 0) ? total : undefined,
+                deadline: deadline || undefined
+            };
         }
     }
     const matchedObj = objectives.find(o => o.title === categoryInput.trim());
@@ -94,7 +111,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-[320px] overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl w-full max-w-[320px] overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
         <div className="flex justify-between items-center px-5 py-4 bg-stone-50 border-b border-stone-100 shrink-0">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-stone-900 text-white rounded-lg"><Target size={12} /></div>
@@ -122,7 +139,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                         className={cn(
                             "px-4 py-2 rounded-lg border text-[10px] font-black transition-all",
                             (!categoryId || categoryId === 'uncategorized')
-                                ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                                ? "bg-primary text-white border-primary shadow-sm" 
                                 : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
                         )}
                     >
@@ -140,7 +157,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                             className={cn(
                                 "px-4 py-2 rounded-lg border text-[10px] font-black transition-all flex items-center gap-2",
                                 categoryId === obj.id 
-                                    ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                                    ? "bg-primary text-white border-primary shadow-sm" 
                                     : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
                             )}
                         >
@@ -165,20 +182,41 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
             <>
               <div className="bg-stone-50/50 rounded-xl p-3 border border-stone-100 space-y-2.5">
                   <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">量化目标</span>
+                      <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">单次目标</span>
                       <div className="flex bg-white rounded-lg p-0.5 border border-stone-100">
-                          <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'duration' ? "bg-stone-900 text-white" : "text-stone-400")}>时长</button>
-                          <button type="button" onClick={() => setTargetMode('count')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'count' ? "bg-stone-900 text-white" : "text-stone-400")}>次数</button>
+                          <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'duration' ? "bg-primary text-white" : "text-stone-400")}>时长</button>
+                          <button type="button" onClick={() => setTargetMode('count')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'count' ? "bg-primary text-white" : "text-stone-400")}>次数</button>
                       </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                       <div className="space-y-0.5">
-                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">{targetMode === 'duration' ? <Clock size={8} /> : <Hash size={8} />} {targetMode === 'duration' ? '目标(h)' : '次数'}</label>
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">{targetMode === 'duration' ? <Clock size={8} /> : <Hash size={8} />} {targetMode === 'duration' ? '每次(h)' : '次数'}</label>
                           <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="0" />
                       </div>
                       <div className="space-y-0.5">
                           <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5"><LayoutList size={8} /> 周期(天)</label>
                           <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="1" />
+                      </div>
+                  </div>
+              </div>
+
+              {/* Long Term Goal Section */}
+              <div className="bg-stone-50/50 rounded-xl p-3 border border-stone-100 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">长期目标 (可选)</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                      <div className="space-y-0.5">
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
+                              <Flag size={8} /> 总量({targetMode === 'duration' ? 'h' : '次'})
+                          </label>
+                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="无" />
+                      </div>
+                      <div className="space-y-0.5">
+                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
+                             <Calendar size={8} /> 截止日期
+                          </label>
+                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300 min-h-[28px]" />
                       </div>
                   </div>
               </div>
@@ -236,7 +274,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
                     <button 
                         type="submit" 
                         onClick={handleSubmit} 
-                        className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-stone-800 transition-all shadow-lg active:scale-[0.98]"
+                        className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
                     >
                         <Save size={14} /> 保存设定
                     </button>

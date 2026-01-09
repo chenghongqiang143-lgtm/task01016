@@ -5,6 +5,8 @@ export interface TaskTarget {
   mode: TargetMode;
   value: number; // 代表小时或次数
   frequency: number; // 周期（天）
+  totalValue?: number; // 总目标值（用于进度条显示）
+  deadline?: string; // 截止日期 ISO string
 }
 
 export interface Objective {
@@ -39,8 +41,10 @@ export interface Todo {
   createdAt: string;
   completedAt?: string; // yyyy-MM-dd
   startDate?: string; // yyyy-MM-dd
+  actualStartDate?: string; // yyyy-MM-dd
   dueTime?: string; // HH:mm
   targets?: TaskTarget; // 新增：允许待办拥有量化目标和周期
+  currentValue?: number; // 当前进度值
 }
 
 export interface DayData {
@@ -75,6 +79,7 @@ export interface Redemption {
 
 // 4页：安排，记录，打分，设置
 export type Tab = 'arrange' | 'record' | 'rating' | 'settings';
+export type ViewMode = 'list' | 'week' | 'month';
 
 export interface RolloverSettings {
   enabled: boolean;
@@ -94,6 +99,7 @@ export interface AppState {
   records: Record<string, DayData>;
   ratings: Record<string, DayRating>;
   rolloverSettings: RolloverSettings;
+  themeColor: string; // Theme Color Hex
 }
 
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);
