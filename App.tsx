@@ -2,11 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     ChevronLeft, ChevronRight, LayoutGrid, RotateCcw, Loader2, TrendingUp, 
     Hexagon, Plus, Menu, X, List, CalendarRange, CalendarDays, 
-    CalendarCheck2, Timer, Settings2, BarChart3, PieChart, Star, NotebookPen, Activity
+    CalendarCheck2, Timer, Settings2, BarChart3, PieChart, Star, Activity
 } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { AppState, Tab, Task, DayData, Objective, Todo, RatingItem, ShopItem, DayRating, ViewMode, Redemption, ReviewTemplate, ArrangeMode, MemoItem } from './types';
+import { AppState, Tab, Task, DayData, Objective, Todo, RatingItem, ShopItem, DayRating, ViewMode, Redemption, ReviewTemplate, MemoItem } from './types';
 import { loadState, saveState, getInitialState } from './services/storage';
 import { cn, generateId, formatDate } from './utils';
 
