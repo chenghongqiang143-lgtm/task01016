@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Task, Objective, DayData, RolloverSettings, HOURS } from '../types';
 import { cn, formatDate } from '../utils';
@@ -66,7 +67,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const [isObjModalOpen, setIsObjModalOpen] = useState(false);
   const [isDataOverlayOpen, setIsDataOverlayOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
-  // const [showClearConfirm, setShowClearConfirm] = useState(false); // Unused in snippet but maybe useful
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [importText, setImportText] = useState('');
@@ -130,6 +130,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   const titleClass = "font-black text-stone-800 text-[10px] leading-tight whitespace-normal break-words text-left";
 
   const sectionTitleClass = "text-sm font-black text-stone-900 uppercase tracking-tight leading-none";
+  const iconContainerClass = "w-8 h-8 flex items-center justify-center rounded-lg bg-stone-100 text-stone-500 shrink-0";
 
   const renderTaskItem = (task: Task) => {
     const currentVal = taskProgress[task.id] || 0;
@@ -185,8 +186,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               {/* Rollover Settings */}
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                      <div className={cn("p-2 rounded-lg transition-colors", rolloverSettings.enabled ? "bg-primary text-white" : "bg-stone-100 text-stone-400")}>
-                          <CalendarClock size={16} />
+                      <div className={cn(iconContainerClass, rolloverSettings.enabled ? "bg-primary text-white" : "")}>
+                          <CalendarClock size={18} />
                       </div>
                       <div>
                           <h4 className="font-black text-stone-800 text-xs">待办自动顺延</h4>
@@ -230,8 +231,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               {/* Theme Color Picker */}
               <div className="pt-3 border-t border-stone-100/60 space-y-3">
                   <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-stone-100 text-stone-500">
-                          <Palette size={16} />
+                      <div className={iconContainerClass}>
+                          <Palette size={18} />
                       </div>
                       <div>
                           <h4 className="font-black text-stone-800 text-xs">主题色彩</h4>
@@ -262,7 +263,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
            
            <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm flex flex-col items-center gap-3">
               <div className="flex items-center gap-3 w-full">
-                  <div className="p-3 bg-stone-50 text-stone-900 rounded-xl shadow-inner border border-stone-100 shrink-0">
+                  <div className={iconContainerClass}>
                       <Database size={18} />
                   </div>
                   <div className="flex-1">
@@ -326,7 +327,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                 className="flex items-center gap-3 cursor-pointer group/title select-none flex-1 min-w-0"
                                 onClick={() => { setEditingObjective(obj); setIsObjModalOpen(true); }}
                             >
-                                <div className="w-8 h-8 shrink-0 rounded-xl flex items-center justify-center shadow-inner transition-transform group-hover/title:scale-110" style={{ backgroundColor: obj.color + '20' }}>
+                                <div className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center shadow-inner transition-transform group-hover/title:scale-110" style={{ backgroundColor: obj.color + '20' }}>
                                     <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: obj.color }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -476,7 +477,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
           }} 
           onDelete={onDeleteTask} 
           objectives={objectives}
-          onAddObjective={onAddObjective} // Allow creating categories from task editor
+          onAddObjective={onAddObjective} 
       />
       
       <ObjectiveEditorModal 

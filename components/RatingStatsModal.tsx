@@ -81,25 +81,25 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
   }, [periodInterval, ratings]);
 
   const getScoreColor = (score: number, isAggregated: boolean = false) => {
-    if (score === 0) return 'bg-stone-200 text-stone-500';
+    if (score === 0) return 'bg-stone-100 text-stone-400';
     
     if (score > 0) {
         // 对于周汇总，分数可能很高，根据强度调整颜色
         if (isAggregated) {
-            if (score >= 10) return 'bg-emerald-700 text-white';
-            if (score >= 5) return 'bg-emerald-600 text-white';
+            if (score >= 10) return 'bg-emerald-600 text-white';
+            if (score >= 5) return 'bg-emerald-500 text-white';
             return 'bg-emerald-400 text-white';
         }
         // 单日分数 (1, 2)
-        return score === 2 ? 'bg-emerald-600 text-white' : 'bg-emerald-400 text-white';
+        return score === 2 ? 'bg-emerald-500 text-white' : 'bg-emerald-300 text-white';
     } else {
         // 负分
         if (isAggregated) {
-            if (score <= -10) return 'bg-rose-700 text-white';
-            if (score <= -5) return 'bg-rose-600 text-white';
+            if (score <= -10) return 'bg-rose-600 text-white';
+            if (score <= -5) return 'bg-rose-500 text-white';
             return 'bg-rose-400 text-white';
         }
-        return score === -2 ? 'bg-rose-600 text-white' : 'bg-rose-400 text-white';
+        return score === -2 ? 'bg-rose-500 text-white' : 'bg-rose-300 text-white';
     }
   };
 
@@ -149,28 +149,28 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
       <div className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] border border-stone-300 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden">
         
         <header className="px-6 py-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-white border border-stone-100 text-primary rounded-lg shadow-sm">
               <TrendingUp size={18} />
             </div>
             <div>
-              <h3 className="font-black text-stone-800 text-sm">打分统计</h3>
+              <h3 className="font-black text-stone-900 text-sm">打分统计</h3>
               <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
                 {format(periodInterval.start, 'M月d日')} - {format(periodInterval.end, 'M月d日')}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+          <div className="flex items-center gap-3">
+            <div className="flex bg-stone-200 p-0.5 rounded-lg border border-stone-200">
                 <button 
                   onClick={() => setRange('week')}
-                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", range === 'week' ? "bg-white text-stone-800 shadow-sm" : "text-stone-400")}
+                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", range === 'week' ? "bg-primary text-white shadow-sm" : "text-stone-500 hover:text-stone-700")}
                 >
                   本周
                 </button>
                 <button 
                   onClick={() => setRange('month')}
-                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", range === 'month' ? "bg-white text-stone-800 shadow-sm" : "text-stone-400")}
+                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", range === 'month' ? "bg-primary text-white shadow-sm" : "text-stone-500 hover:text-stone-700")}
                 >
                   本月
                 </button>
@@ -186,7 +186,7 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
           {/* 总分卡片 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
-              <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">周期得分汇总</span>
+              <span className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em]">周期得分汇总</span>
               <div className="flex items-baseline gap-2">
                 <span className={cn("text-4xl font-black tabular-nums tracking-tighter", statsSummary.total >= 0 ? "text-emerald-500" : "text-rose-500")}>
                   {statsSummary.total > 0 ? `+${statsSummary.total}` : statsSummary.total}
@@ -195,9 +195,9 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
               </div>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-1">
-              <span className="text-[9px] font-black text-stone-300 uppercase tracking-[0.2em]">日均评估表现</span>
+              <span className="text-[9px] font-black text-stone-400 uppercase tracking-[0.2em]">日均评估表现</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black tabular-nums tracking-tighter text-stone-800">{statsSummary.avg}</span>
+                <span className="text-4xl font-black tabular-nums tracking-tighter text-stone-900">{statsSummary.avg}</span>
                 <Star size={16} className="text-amber-400 fill-current" />
               </div>
             </div>
@@ -215,7 +215,7 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                 {/* 日期头部 */}
                 <div className="flex mb-3">
                   <div className="w-20 shrink-0"></div>
-                  <div className="flex-1 flex justify-between gap-1">
+                  <div className="flex-1 flex justify-between gap-1.5">
                     {timeColumns.map((d, idx) => (
                       <div key={d.toString()} className="flex-1 flex flex-col items-center gap-0.5 min-w-[2rem]">
                         <span className="text-[8px] font-black text-stone-300 uppercase">
@@ -239,12 +239,12 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                 <div className="space-y-2">
                   {ratingItems.map(item => (
                     <div key={item.id} className="flex items-center group h-8">
-                      <div className="w-20 shrink-0 pr-2">
-                        <div className="text-[10px] font-black text-stone-600 truncate group-hover:text-stone-900 transition-colors">
+                      <div className="w-20 shrink-0 pr-3">
+                        <div className="text-[10px] font-black text-stone-500 truncate group-hover:text-stone-900 transition-colors text-right">
                           {item.name}
                         </div>
                       </div>
-                      <div className="flex-1 flex justify-between gap-1">
+                      <div className="flex-1 flex justify-between gap-1.5">
                         {timeColumns.map(date => {
                           const score = calculateColumnScore(date, item.id);
                           const hasData = score !== undefined;
@@ -253,11 +253,11 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                             <div 
                               key={date.toString()}
                               className={cn(
-                                "flex-1 min-w-[2rem] h-full rounded-md flex items-center justify-center text-[9px] font-black transition-all border shadow-sm",
-                                hasData ? getScoreColor(score!, range === 'month') : "bg-stone-50 border-stone-100 opacity-20"
+                                "flex-1 min-w-[2rem] h-full rounded-[4px] flex items-center justify-center text-[9px] font-black transition-all border shadow-sm",
+                                hasData ? getScoreColor(score!, range === 'month') : "bg-stone-50 border-stone-100 text-stone-300"
                               )}
                             >
-                              {hasData ? (score! > 0 ? `+${score}` : score) : ''}
+                              {hasData ? (score! > 0 ? `+${score}` : score) : '-'}
                             </div>
                           );
                         })}
@@ -280,12 +280,12 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
                 {weeklyReviews.length > 0 ? (
                     <div className="space-y-3">
                         {weeklyReviews.map((item, idx) => (
-                            <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex gap-3">
-                                <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5 w-12 border-r border-stone-50 pr-3">
+                            <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex gap-4">
+                                <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5 w-10 border-r border-stone-50 pr-2">
                                     <span className="text-[9px] font-black text-stone-300 uppercase">
                                         {format(item.date, 'EE', { locale: zhCN })}
                                     </span>
-                                    <span className="text-xs font-black text-stone-800">
+                                    <span className="text-xs font-black text-stone-900">
                                         {format(item.date, 'd')}
                                     </span>
                                 </div>

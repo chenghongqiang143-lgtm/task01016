@@ -244,7 +244,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                                             "w-1.5 h-1.5 rounded-full shrink-0",
                                             isCompleted && !isSelected ? "animate-pulse shadow-[0_0_4px_rgba(0,0,0,0.2)]" : ""
                                         )} style={{ backgroundColor: isSelected ? 'white' : task.color }} />
-                                        <span className="text-[10px] font-bold leading-none truncate flex-1">{task.name}</span>
+                                        <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
                                     </div>
                                 </div>
                             );
@@ -381,7 +381,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                         onClick={() => { setViewMode(m); setActiveSide(null); }}
                         className={cn(
                             "px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
-                            viewMode === m ? "bg-white text-primary shadow-sm" : "text-stone-400 hover:text-stone-600"
+                            viewMode === m ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600"
                         )}
                     >
                         {m === 'day' && <Clock size={12} />}

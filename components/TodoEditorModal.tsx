@@ -54,7 +54,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setObjectiveId(todo.objectiveId || 'none');
         setIsFrog(todo.isFrog);
         setStartDate(todo.startDate || '');
-        setActualStartDate(todo.actualStartDate || todo.startDate || ''); // Default actual start to planned start if missing
+        setActualStartDate(todo.actualStartDate || todo.startDate || ''); 
         setSubTasks(todo.subTasks || []);
         setShowDeleteConfirm(false);
         if (todo.targets) {
@@ -136,26 +136,26 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl w-full max-w-[380px] overflow-hidden border border-stone-300 shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center px-6 py-5 bg-stone-50 border-b border-stone-200">
+      <div className="bg-white rounded-3xl w-full max-w-[380px] overflow-hidden border border-stone-200 shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center px-6 py-5 bg-stone-50 border-b border-stone-100 shrink-0">
           <h3 className="font-black text-sm text-stone-800">
             {todo ? '编辑任务' : '新建任务'}
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-stone-200 rounded-full text-stone-400">
+          <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-full text-stone-400 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
           {/* 标题 */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex justify-between items-center pr-1">
-                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">任务名称</label>
+                <label className="text-xs font-bold text-stone-500 ml-1">任务名称</label>
                 <button
                     type="button"
                     onClick={() => setIsFrog(!isFrog)}
                     className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border",
+                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold transition-all border",
                         isFrog 
                             ? "bg-amber-50 text-amber-500 border-amber-200 shadow-sm" 
                             : "bg-white text-stone-400 border-stone-100 hover:text-stone-600 hover:border-stone-200"
@@ -169,25 +169,25 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:bg-white focus:border-stone-400 transition-all font-bold text-sm"
+              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-stone-800 transition-all font-bold text-sm text-stone-900"
               placeholder="你想完成什么？"
               autoFocus
             />
           </div>
 
           {/* 目标分类选择 */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">所属分类</label>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-stone-500 ml-1">所属分类</label>
             <div className="flex flex-wrap gap-2">
               <button
                 key="none"
                 type="button"
                 onClick={() => setObjectiveId('none')}
                 className={cn(
-                  "px-4 py-2 rounded-lg border text-[10px] font-black transition-all",
+                  "px-4 py-2 rounded-lg border text-[11px] font-bold transition-all",
                   objectiveId === 'none' 
-                    ? "bg-primary text-white border-primary shadow-sm" 
-                    : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
+                    ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                    : "bg-white border-stone-100 text-stone-400 hover:border-stone-200"
                 )}
               >
                 无分类
@@ -198,12 +198,14 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   type="button"
                   onClick={() => setObjectiveId(obj.id)}
                   className={cn(
-                    "px-4 py-2 rounded-lg border text-[10px] font-black transition-all flex items-center gap-2",
+                    "px-4 py-2 rounded-lg border text-[11px] font-bold transition-all flex items-center gap-2",
                     objectiveId === obj.id 
-                      ? "bg-primary text-white border-primary shadow-sm" 
-                      : "bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200"
+                      ? "bg-white border-transparent shadow-md ring-1 ring-stone-100" 
+                      : "bg-white border-stone-100 text-stone-400 hover:border-stone-200"
                   )}
+                  style={objectiveId === obj.id ? { color: obj.color, borderColor: obj.color } : {}}
                 >
+                  <div className={cn("w-2 h-2 rounded-full", objectiveId === obj.id ? "" : "bg-stone-300")} style={{ backgroundColor: objectiveId === obj.id ? obj.color : undefined }} />
                   {obj.title}
                 </button>
               ))}
@@ -211,61 +213,61 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
           </div>
 
           {/* 日期 - 直接显示 */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1 flex items-center gap-1">
-              <Calendar size={10} /> 日期
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-stone-500 ml-1 flex items-center gap-1">
+              <Calendar size={12} /> 日期
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:bg-white focus:border-stone-400 transition-all font-bold text-sm"
+              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-stone-800 transition-all font-bold text-sm text-stone-800"
             />
           </div>
 
-          {/* 量化目标 (类似 Task Editor) */}
-          <div className="bg-stone-50/50 rounded-xl p-3 border border-stone-100 space-y-2.5">
+          {/* 量化目标 */}
+          <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100 space-y-3">
               <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">单次目标 (可选)</span>
+                  <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">单次目标</span>
                   <div className="flex bg-white rounded-lg p-0.5 border border-stone-100">
-                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'duration' ? "bg-primary text-white" : "text-stone-400")}>时长</button>
-                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-2.5 py-1 rounded-md text-[9px] font-black transition-all", targetMode === 'count' ? "bg-primary text-white" : "text-stone-400")}>次数</button>
+                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'duration' ? "bg-stone-900 text-white" : "text-stone-400")}>时长</button>
+                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'count' ? "bg-stone-900 text-white" : "text-stone-400")}>次数</button>
                   </div>
               </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                  <div className="space-y-0.5">
-                      <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">{targetMode === 'duration' ? <Clock size={8} /> : <Hash size={8} />} {targetMode === 'duration' ? '每次(h)' : '次数'}</label>
-                      <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="0" />
+              <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">{targetMode === 'duration' ? <Clock size={10} /> : <Hash size={10} />} {targetMode === 'duration' ? '每次(h)' : '次数'}</label>
+                      <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="0" />
                   </div>
-                  <div className="space-y-0.5">
-                      <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5"><LayoutList size={8} /> 周期(天)</label>
-                      <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="1" />
+                  <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1"><LayoutList size={10} /> 周期(天)</label>
+                      <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="1" />
                   </div>
               </div>
 
                {/* Long Term Goal Section */}
-               <div className="pt-2 border-t border-stone-100/50 mt-1 space-y-2.5">
+               <div className="pt-3 border-t border-stone-200 mt-2 space-y-3">
                   <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">长期目标与期限</span>
+                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">长期目标</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                      <div className="space-y-0.5">
-                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
-                              <Flag size={8} /> 总量
+                  <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
+                              <Flag size={10} /> 总量
                           </label>
-                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300" placeholder="无" />
+                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="无" />
                       </div>
-                      <div className="space-y-0.5">
-                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
-                             <Hourglass size={8} /> 截止日期
+                      <div className="space-y-1">
+                          <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
+                             <Hourglass size={10} /> 截止日期
                           </label>
-                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300 min-h-[28px]" />
+                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300 min-h-[34px]" />
                       </div>
-                      <div className="col-span-2 space-y-0.5">
-                          <label className="text-[8px] font-black text-stone-300 uppercase flex items-center gap-1 ml-0.5">
-                             <History size={8} /> 项目起始日 (用于计算实际已行天数)
+                      <div className="col-span-2 space-y-1">
+                          <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
+                             <History size={10} /> 项目起始日
                           </label>
-                          <input type="date" value={actualStartDate} onChange={(e) => setActualStartDate(e.target.value)} className="w-full px-2.5 py-1.5 bg-white border border-stone-100 rounded-lg text-xs font-black text-stone-700 focus:outline-none focus:border-stone-300 min-h-[28px]" />
+                          <input type="date" value={actualStartDate} onChange={(e) => setActualStartDate(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300 min-h-[34px]" />
                       </div>
                   </div>
               </div>
@@ -273,18 +275,18 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
 
           {/* 子任务 */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+            <label className="text-xs font-bold text-stone-500 ml-1 flex items-center gap-2">
                <ListTodo size={12} /> 任务拆解
             </label>
             <div className="space-y-2">
               {subTasks.map(st => (
-                <div key={st.id} className="flex items-center gap-2 group">
+                <div key={st.id} className="flex items-center gap-2 group bg-stone-50 p-2 rounded-xl border border-transparent hover:border-stone-100 transition-all">
                   <button 
                     type="button" 
                     onClick={() => handleToggleSubTask(st.id)}
-                    className={cn("p-1 rounded transition-colors", st.isCompleted ? "text-emerald-500" : "text-stone-300")}
+                    className={cn("p-1 rounded-lg transition-colors", st.isCompleted ? "text-white bg-stone-800" : "text-stone-300 bg-white border border-stone-100")}
                   >
-                    <CheckSquare size={16} fill={st.isCompleted ? "currentColor" : "none"} className={st.isCompleted ? "text-white" : ""} />
+                    <CheckSquare size={16} />
                   </button>
                   <span className={cn("text-xs font-bold flex-1", st.isCompleted ? "text-stone-300 line-through" : "text-stone-600")}>
                     {st.title}
@@ -292,7 +294,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   <button 
                     type="button" 
                     onClick={() => handleRemoveSubTask(st.id)}
-                    className="p-1 text-stone-200 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                    className="p-1.5 text-stone-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -304,28 +306,28 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   value={newSubTaskTitle}
                   onChange={(e) => setNewSubTaskTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubTask())}
-                  className="flex-1 px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg focus:outline-none text-xs font-bold"
+                  className="flex-1 px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none text-xs font-bold focus:border-stone-300 transition-all"
                   placeholder="添加步骤..."
                 />
                 <button 
                   type="button" 
                   onClick={handleAddSubTask}
-                  className="p-2 bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200"
+                  className="w-10 flex items-center justify-center bg-stone-100 text-stone-500 rounded-xl hover:bg-stone-200 transition-colors"
                 >
-                  <Plus size={16} />
+                  <Plus size={18} />
                 </button>
               </div>
             </div>
           </div>
         </form>
 
-        <div className="p-5 bg-stone-50 border-t border-stone-200 flex gap-2">
+        <div className="p-5 bg-stone-50 border-t border-stone-100 flex gap-3 shrink-0">
           {showDeleteConfirm ? (
-              <div className="flex gap-2 flex-1 animate-in zoom-in-95 fade-in duration-200">
+              <div className="flex gap-3 flex-1 animate-in zoom-in-95 fade-in duration-200">
                   <button 
                       type="button" 
                       onClick={() => setShowDeleteConfirm(false)} 
-                      className="flex-1 py-3.5 bg-white border border-stone-200 text-stone-500 rounded-xl font-bold text-xs hover:bg-stone-50 transition-colors"
+                      className="flex-1 py-3 bg-white border border-stone-200 text-stone-500 rounded-xl font-bold text-xs hover:bg-stone-50 transition-colors"
                   >
                       取消
                   </button>
@@ -339,7 +341,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                               onClose(); 
                           }
                       }}
-                      className="flex-1 py-3.5 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-colors shadow-sm flex items-center justify-center gap-1"
+                      className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold text-xs hover:bg-red-600 transition-colors shadow-sm flex items-center justify-center gap-1"
                   >
                       <Trash2 size={14} /> 确认删除
                   </button>
@@ -352,15 +354,15 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                       onClick={() => setShowDeleteConfirm(true)}
                       className="px-4 rounded-xl bg-white border border-stone-200 text-stone-400 hover:text-red-500 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center"
                     >
-                      <Trash2 size={16} />
+                      <Trash2 size={18} />
                     </button>
                   )}
                   <button 
                     type="button" 
                     onClick={handleSubmit}
-                    className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
+                    className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
                   >
-                    <Save size={18} /> 保存任务
+                    <Save size={16} /> 保存任务
                   </button>
              </>
           )}

@@ -2,9 +2,10 @@
 import React, { useState, useMemo } from 'react';
 import { DayRating, RatingItem, ShopItem, Redemption, ReviewTemplate } from '../types';
 import { cn, formatDate, generateId } from '../utils';
-import { MessageSquareQuote, Plus, Settings2, X, Trash2, ShoppingBag, Coins, Edit2, Save, PenTool, LayoutTemplate, History, Clock } from 'lucide-react';
+import { MessageSquareQuote, Plus, Settings2, X, Trash2, ShoppingBag, Coins, Edit2, Save, PenTool, LayoutTemplate, History, Clock, TrendingUp } from 'lucide-react';
 import { useModalBackHandler } from '../hooks';
 import { format } from 'date-fns';
+import { RatingStatsModal } from '../components/RatingStatsModal';
 
 interface RatingViewProps {
   currentDate: Date;
@@ -22,6 +23,8 @@ interface RatingViewProps {
   onAddReviewTemplate?: (template: Omit<ReviewTemplate, 'id'>) => void;
   onUpdateReviewTemplate?: (template: ReviewTemplate) => void;
   onDeleteReviewTemplate?: (id: string) => void;
+  isStatsModalOpen: boolean;
+  onCloseStats: () => void;
 }
 
 const SCORES = [-2, -1, 0, 1, 2];
@@ -41,7 +44,9 @@ export const RatingView: React.FC<RatingViewProps> = ({
   onRedeem,
   onAddReviewTemplate,
   onUpdateReviewTemplate,
-  onDeleteReviewTemplate
+  onDeleteReviewTemplate,
+  isStatsModalOpen,
+  onCloseStats
 }) => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   // Remove internal isShopModalOpen, use props
@@ -57,6 +62,7 @@ export const RatingView: React.FC<RatingViewProps> = ({
   useModalBackHandler(isConfigModalOpen, () => setIsConfigModalOpen(false));
   useModalBackHandler(isShopOpen, () => onToggleShop?.(false));
   useModalBackHandler(isTemplateModalOpen, () => setIsTemplateModalOpen(false));
+  useModalBackHandler(isStatsModalOpen, onCloseStats);
   useModalBackHandler(!!editingItem, () => setEditingItem(null));
   useModalBackHandler(!!editingShopItem, () => setEditingShopItem(null));
   useModalBackHandler(!!editingTemplate, () => setEditingTemplate(null));
@@ -146,9 +152,27 @@ export const RatingView: React.FC<RatingViewProps> = ({
                         <Coins size={16} className="text-white" />
                     </div>
                 </div>
-                <button onClick={() => { setShopTab('buy'); onToggleShop?.(true); }} className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full shadow-lg transition-all active:scale-90">
-                    <ShoppingBag size={18} />
-                </button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={onCloseStats} // Trigger stats via prop callback if needed, but here button is mostly redundant if in sidebar.
+                        // Actually let's keep it as an on-screen shortcut too.
+                        // But wait, the prop is onCloseStats... we need onOpenStats if we want an on-screen button.
+                        // However, previous code removed the internal state.
+                        // Let's assume the user uses the sidebar or we re-add a prop for opening.
+                        // For now, I will map it to a prop if provided, or just keep the button to toggle via prop logic if applicable.
+                        // Since I passed `isStatsModalOpen` and `onCloseStats`, I can't easily "open" it from here unless I have `onOpenStats`.
+                        // But the requirement was "Sidebar add rating statistics".
+                        // I'll leave the button here but it might need an `onOpenStats` prop to work.
+                        // Let's assume the parent controls it.
+                        className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full shadow-lg transition-all active:scale-90 hidden" 
+                        title="打分统计"
+                    >
+                        <TrendingUp size={18} />
+                    </button>
+                    <button onClick={() => { setShopTab('buy'); onToggleShop?.(true); }} className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full shadow-lg transition-all active:scale-90">
+                        <ShoppingBag size={18} />
+                    </button>
+                </div>
            </div>
            <div className="w-full h-px bg-white/10" />
            <div className="flex items-center justify-between w-full relative z-10 px-0.5">
@@ -188,6 +212,11 @@ export const RatingView: React.FC<RatingViewProps> = ({
                                 </button>
                             ))}
                         </div>
+                        {selectedScore !== undefined && item.reasons[selectedScore] && (
+                            <div className="text-[9px] text-primary font-bold px-1 animate-in fade-in slide-in-from-top-1">
+                                {item.reasons[selectedScore]}
+                            </div>
+                        )}
                     </div>
                  );
              })}
@@ -414,11 +443,25 @@ export const RatingView: React.FC<RatingViewProps> = ({
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">分值定义 (保留备用)</label>
+                        <label className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">分值定义</label>
                         <div className="grid grid-cols-1 gap-2">
-                             <div className="p-2 bg-stone-50 rounded-lg text-[9px] text-stone-400 text-center">
-                                 当前模式仅显示数字，此处定义可保留作为记录参考
-                             </div>
+                            {[-2, -1, 0, 1, 2].map(score => (
+                                <div key={score} className="flex items-center gap-2">
+                                    <div className={cn("w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black shrink-0", score > 0 ? "bg-emerald-100 text-emerald-600" : score < 0 ? "bg-rose-100 text-rose-600" : "bg-stone-100 text-stone-500")}>
+                                        {score > 0 ? `+${score}` : score}
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        value={editingItem.reasons[score] || ''} 
+                                        onChange={e => setEditingItem({
+                                            ...editingItem, 
+                                            reasons: { ...editingItem.reasons, [score]: e.target.value }
+                                        })}
+                                        className="flex-1 px-3 py-2 bg-stone-50 border border-stone-100 rounded-lg text-xs font-bold focus:outline-none focus:border-stone-300 transition-colors"
+                                        placeholder="描述..."
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -506,6 +549,15 @@ export const RatingView: React.FC<RatingViewProps> = ({
             </form>
         </div>
       )}
+
+      {/* Stats Modal Rendered by Parent */}
+      <RatingStatsModal 
+        isOpen={isStatsModalOpen} 
+        onClose={onCloseStats} 
+        ratings={ratings} 
+        ratingItems={ratingItems}
+        currentDate={currentDate}
+      />
     </div>
   );
 };

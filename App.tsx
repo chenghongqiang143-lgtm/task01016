@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ListTodo, LayoutGrid, ClipboardCheck, Settings, BarChart2, CalendarDays, RotateCcw, Loader2, Star, TrendingUp, Hexagon, Plus, Calendar, Menu, X, List, CalendarRange, Columns, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, ClipboardCheck, Settings, BarChart2, CalendarDays, RotateCcw, Loader2, Star, TrendingUp, Hexagon, Plus, Calendar, Menu, X, List, CalendarRange, Columns, ShoppingBag, PieChart, Activity, CalendarCheck2, Trophy, Timer, Settings2 } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { AppState, Tab, Task, DayData, Objective, Todo, RatingItem, ShopItem, DayRating, ViewMode, ReviewTemplate, TimeBlock } from './types';
@@ -14,7 +14,6 @@ import { StatsView } from './views/StatsView';
 import { RatingView } from './views/RatingView';
 import { TaskStatsModal } from './components/TaskStatsModal';
 import { RatingStatsModal } from './components/RatingStatsModal';
-import { TodoEditorModal } from './components/TodoEditorModal';
 
 // 最小加载时间 (ms)，防止闪屏
 const MIN_LOADING_TIME = 800;
@@ -23,7 +22,7 @@ const LOADING_TIMEOUT = 5000;
 
 function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}` : '99 102 241';
+  return result ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}` : '39 39 42'; // Zinc 800
 }
 
 export function App() {
@@ -33,14 +32,13 @@ export function App() {
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // 控制侧边栏抽屉
   const [isTaskStatsOpen, setIsTaskStatsOpen] = useState(false);
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false); // 时间轴统计弹窗
-  const [isRatingStatsOpen, setIsRatingStatsOpen] = useState(false); // 打分趋势弹窗
-  const [isShopModalOpen, setIsShopModalOpen] = useState(false); // 积分商店弹窗 (提升状态)
-  const [isTodoModalOpen, setIsTodoModalOpen] = useState(false);
+  const [isTimeStatsOpen, setIsTimeStatsOpen] = useState(false); // Global stats modal
+  const [isRatingStatsOpen, setIsRatingStatsOpen] = useState(false); // Rating stats modal
   
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(false); 
+  const [isShopOpen, setIsShopOpen] = useState(false);
   
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<AppState | null>(null);
@@ -83,7 +81,6 @@ export function App() {
         const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), LOADING_TIMEOUT));
 
         // 竞速：数据加载 vs 超时，同时等待最小时间
-        // 这里我们要等待 (数据加载完成) 和 (最小时间) 都满足，或者 (超时) 发生
         const [loadedData] = await Promise.all([
            Promise.race([dataPromise, timeoutPromise]),
            minWaitPromise
@@ -139,7 +136,6 @@ export function App() {
   const currentSchedule: DayData = useMemo(() => {
       if (!state) return { hours: {} };
       const specificDayData = state.schedule[dateKey] || { hours: {} };
-      // Fallback for blocks if hours are empty? No, we sync both ways or prefer blocks
       return specificDayData;
   }, [state?.schedule, dateKey]);
 
@@ -158,18 +154,15 @@ export function App() {
   }, [state?.recordBlocks, dateKey]);
 
   if (!state || !isLoaded) {
-    // 即使有 index.html 的骨架屏，React 挂载后也保持一个加载状态作为双重保障
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-stone-50 space-y-4">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">LOADING</span>
+        <Loader2 className="w-8 h-8 text-stone-800 animate-spin" />
+        <span className="text-xs font-bold text-stone-500 uppercase tracking-widest">SYSTEM LOADING</span>
       </div>
     );
   }
 
   // --- 数据管理逻辑 ---
-  
-  // 导出数据：复制到剪切板
   const handleExportData = () => {
     if (!state) return;
     const dataStr = JSON.stringify(state, null, 2);
@@ -181,7 +174,6 @@ export function App() {
     });
   };
 
-  // 导入数据：从字符串解析
   const handleImportData = (dataStr: string) => {
       try {
         const imported = JSON.parse(dataStr);
@@ -196,20 +188,18 @@ export function App() {
       }
   };
   
-  // 清空记录（保留模板）
   const handleClearRecords = () => {
       setState(prev => {
           if (!prev) return getInitialState();
           return {
               ...prev,
-              todos: [], // 清空待办实例
-              schedule: {}, // 清空日程安排
+              todos: [],
+              schedule: {},
               scheduleBlocks: {},
-              records: {}, // 清空实际记录
-              recordBlocks: {}, // 清空记录块
-              ratings: {}, // 清空评分
-              redemptions: [], // 清空兑换记录
-              // 保留：tasks(行为库), objectives(分类), categoryOrder, recurringSchedule(循环模板), ratingItems, shopItems, rolloverSettings, themeColor
+              records: {},
+              recordBlocks: {},
+              ratings: {},
+              redemptions: [],
               themeColor: prev.themeColor,
               reviewTemplates: prev.reviewTemplates
           };
@@ -217,7 +207,6 @@ export function App() {
       alert('所有历史记录已清空，模板与设置已保留。');
   };
 
-  // --- Helper to Sync Blocks to Legacy Records (Hour Buckets) ---
   const syncBlocksToRecords = (dateKey: string, blocks: TimeBlock[], prevState: AppState, type: 'record' | 'schedule') => {
       const newHourRecords: Record<number, string[]> = {};
       
@@ -252,12 +241,10 @@ export function App() {
       }
   };
 
-  // --- 状态操作处理函数 ---
   const updateRecordHour = (hour: number, taskIds: string[]) => {
     setState(prev => prev ? ({ ...prev, records: { ...prev.records, [dateKey]: { hours: { ...(prev.records[dateKey] || {hours:{}}).hours, [hour]: taskIds } } } }) : null);
   };
 
-  // Record Block Handlers
   const handleAddRecordBlock = (block: TimeBlock) => {
       setState(prev => prev ? syncBlocksToRecords(dateKey, [...(prev.recordBlocks?.[dateKey] || []), block], prev, 'record') : null);
   };
@@ -268,7 +255,6 @@ export function App() {
       setState(prev => prev ? syncBlocksToRecords(dateKey, (prev.recordBlocks?.[dateKey] || []).filter(b => b.id !== blockId), prev, 'record') : null);
   };
 
-  // Schedule Block Handlers (Plan)
   const handleAddScheduleBlock = (block: TimeBlock) => {
       setState(prev => prev ? syncBlocksToRecords(dateKey, [...(prev.scheduleBlocks?.[dateKey] || []), block], prev, 'schedule') : null);
   };
@@ -303,7 +289,6 @@ export function App() {
     setState(prev => prev ? ({ ...prev, redemptions: [...prev.redemptions, redemption] }) : null);
   };
 
-  // --- Review Templates ---
   const handleAddReviewTemplate = (template: Omit<ReviewTemplate, 'id'>) => {
     const newTemplate = { ...template, id: generateId() };
     setState(prev => prev ? ({ ...prev, reviewTemplates: [...prev.reviewTemplates, newTemplate] }) : null);
@@ -315,9 +300,7 @@ export function App() {
     setState(prev => prev ? ({ ...prev, reviewTemplates: prev.reviewTemplates.filter(t => t.id !== id) }) : null);
   };
 
-  // --- 分类管理逻辑 (新增) ---
   const handleAddObjective = (obj: Objective) => {
-    // 确保有 ID
     const newObj = { ...obj, id: obj.id || generateId() };
     setState(prev => prev ? ({ 
       ...prev, 
@@ -343,72 +326,75 @@ export function App() {
   };
 
   return (
-    <div className="h-screen w-screen bg-stone-50 flex items-center justify-center overflow-hidden font-sans text-stone-800 p-0 sm:p-4 md:p-6 transition-all">
-      <div className="w-full h-full sm:max-w-md md:max-w-5xl lg:max-w-6xl md:h-[90vh] bg-white sm:rounded-3xl flex flex-col md:flex-row relative border border-stone-200 shadow-2xl overflow-hidden">
+    <div className="h-screen w-screen bg-[#f5f5f4] flex items-center justify-center overflow-hidden font-sans text-stone-800 p-0 sm:p-4 lg:p-6 transition-all">
+      <div className="w-full h-full sm:max-w-md md:max-w-5xl lg:max-w-6xl md:h-[94vh] bg-white sm:rounded-3xl flex flex-col md:flex-row relative shadow-soft overflow-hidden border border-stone-200">
         
-        {/* Desktop/Tablet Side Navigation */}
-        <nav className="hidden md:flex w-20 flex-col items-center py-6 border-r border-stone-100 bg-stone-50/30 shrink-0 z-50">
-            <div className="mb-8 p-2 bg-primary text-white rounded-xl shadow-lg shadow-primary/20">
-                <Hexagon size={24} strokeWidth={2.5} />
+        {/* Desktop/Tablet Minimalist Sidebar - Adapted to Theme */}
+        <nav className="hidden md:flex w-[80px] flex-col items-center py-6 bg-white border-r border-stone-100 shrink-0 z-50 transition-colors duration-300">
+            <div className="mb-8 p-3 bg-primary text-white rounded-2xl cursor-pointer hover:scale-105 transition-transform shadow-md" title="ChronosFlow">
+                <Hexagon size={26} strokeWidth={2.5} />
             </div>
-            <div className="flex-1 flex flex-col gap-4 w-full px-3">
-                <SideNavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<ListTodo size={24} />} />
-                <SideNavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<ClipboardCheck size={24} />} />
-                <SideNavButton label="打分" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Star size={24} />} />
+            <div className="flex-1 flex flex-col gap-6 w-full px-3 items-center">
+                <SideNavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<CalendarCheck2 size={22} />} />
+                <SideNavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<Timer size={22} />} />
+                <SideNavButton label="评估" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Trophy size={22} />} />
                 <div className="flex-1" />
-                <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={24} />} />
+                <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings2 size={22} />} />
             </div>
         </nav>
 
         {/* Content Wrapper */}
-        <div className="flex-1 flex flex-col h-full min-w-0 relative">
-            {/* Header Navigation */}
-            <header className="bg-white/90 backdrop-blur-md z-[60] shrink-0 border-b border-stone-100 pt-[env(safe-area-inset-top)] transition-all relative">
-            <div className="h-14 px-4 flex items-center justify-between">
-                {/* Left: Sidebar Trigger (Visible on Mobile or for Drawer on Tablet) */}
-                <div className="w-20 flex justify-start items-center">
-                    <button 
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-2 -ml-2 text-stone-500 hover:bg-stone-100 rounded-xl transition-all active:scale-95"
-                    >
-                        <Menu size={20} />
-                    </button>
-                </div>
-                
-                {/* Center: Date Navigation */}
-                <div className="flex-1 flex items-center justify-center gap-1">
-                    <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="p-1.5 text-stone-300 hover:text-stone-800 transition-all active:scale-90"><ChevronLeft size={18} /></button>
-                    
-                    <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="flex items-baseline gap-2 px-3 py-1.5 rounded-lg hover:bg-stone-50 transition-all active:scale-95">
-                        <span className="font-black text-sm text-stone-800 whitespace-nowrap leading-none">{format(currentDate, 'M月d日', { locale: zhCN })}</span>
-                        <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{format(currentDate, 'EEE', { locale: zhCN })}</span>
-                        <input ref={dateInputRef} type="date" className="absolute opacity-0 pointer-events-none" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
-                    </button>
-
-                    <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-1.5 text-stone-300 hover:text-stone-800 transition-all active:scale-90"><ChevronRight size={18} /></button>
-                </div>
-                
-                {/* Right: Back to Today & Status */}
-                <div className="w-20 flex justify-end items-center gap-2">
-                    {!isToday ? (
+        <div className="flex-1 flex flex-col h-full min-w-0 relative bg-white">
+            {/* Header */}
+            <header className="bg-white z-[60] shrink-0 pt-[env(safe-area-inset-top)] transition-all sticky top-0 h-16 flex items-center px-6">
+                <div className="flex-1 flex items-center justify-between">
+                    {/* Left */}
+                    <div className="w-24 flex justify-start items-center">
                         <button 
-                            onClick={() => setCurrentDate(new Date())}
-                            className="p-2 text-stone-500 hover:bg-stone-100 rounded-xl transition-all active:scale-95 text-[10px] font-bold flex flex-col items-center leading-none gap-0.5"
-                            title="回到今天"
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden p-2 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-all active:scale-95"
                         >
-                            <RotateCcw size={16} />
+                            <Menu size={24} />
                         </button>
-                    ) : editingStatus ? (
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-primary text-white rounded-md shadow-sm border border-primary/20 animate-in fade-in">
-                            <span className="text-[9px] font-black whitespace-nowrap uppercase leading-none">{editingStatus}</span>
+                        <div className="hidden md:flex items-baseline gap-1">
+                            <span className="text-sm font-black text-stone-900 uppercase tracking-widest">CHRONOS</span>
                         </div>
-                    ) : null}
+                    </div>
+                    
+                    {/* Center: Date Navigation Pills */}
+                    <div className="flex items-center justify-center gap-1 bg-stone-50 p-1 rounded-2xl border border-stone-100/50">
+                        <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="p-1.5 text-stone-400 hover:text-stone-900 hover:bg-white rounded-xl transition-all active:scale-90"><ChevronLeft size={18} /></button>
+                        
+                        <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="relative flex items-center justify-center px-4 py-1 cursor-pointer min-w-[100px]">
+                            <span className="font-bold text-sm text-stone-800 whitespace-nowrap">{format(currentDate, 'M月d日')}</span>
+                            <span className="text-[10px] text-stone-400 ml-1 font-medium">{format(currentDate, 'EEE', { locale: zhCN })}</span>
+                            <input ref={dateInputRef} type="date" className="absolute inset-0 opacity-0 cursor-pointer" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
+                        </button>
+
+                        <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-1.5 text-stone-400 hover:text-stone-900 hover:bg-white rounded-xl transition-all active:scale-90"><ChevronRight size={18} /></button>
+                    </div>
+                    
+                    {/* Right: Actions */}
+                    <div className="w-24 flex justify-end items-center gap-2">
+                        {!isToday ? (
+                            <button 
+                                onClick={() => setCurrentDate(new Date())}
+                                className="p-2 text-primary bg-primary/5 hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-1.5 border border-primary/10"
+                                title="回到今天"
+                            >
+                                <RotateCcw size={18} />
+                            </button>
+                        ) : editingStatus ? (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white rounded-xl shadow-sm">
+                                <span className="text-[10px] font-bold whitespace-nowrap uppercase leading-none">{editingStatus}</span>
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
-            </div>
             </header>
 
             {/* Main Content Body */}
-            <main className="flex-1 overflow-hidden relative bg-white">
+            <main className="flex-1 overflow-hidden relative">
             {activeTab === 'arrange' && (
                 <TodoView 
                 todos={state.todos} objectives={state.objectives} tasks={state.tasks}
@@ -422,7 +408,7 @@ export function App() {
                 onDateChange={setCurrentDate}
                 onUpdateObjective={handleUpdateObjective}
                 onDeleteObjective={handleDeleteObjective}
-                viewMode={viewMode} // Pass lifted state
+                viewMode={viewMode}
                 />
             )}
 
@@ -442,23 +428,21 @@ export function App() {
                     onDeleteScheduleBlock={handleDeleteScheduleBlock}
                     onAddTodo={(todo) => setState(prev => prev ? ({ ...prev, todos: [todo, ...prev.todos] }) : null)}
                     currentDate={currentDate} onEditingStatusChange={setEditingStatus}
+                    onOpenStats={() => setIsTimeStatsOpen(true)}
                 />
             )}
 
             {activeTab === 'rating' && (
-                <RatingView 
-                    currentDate={currentDate} ratings={state.ratings} ratingItems={state.ratingItems} shopItems={state.shopItems} redemptions={state.redemptions}
-                    reviewTemplates={state.reviewTemplates}
-                    isShopOpen={isShopModalOpen} // Controlled State
-                    onToggleShop={setIsShopModalOpen} // Controller
-                    onUpdateRating={handleUpdateRating} 
-                    onUpdateRatingItems={(items) => setState(prev => prev ? ({ ...prev, ratingItems: items }) : null)}
-                    onUpdateShopItems={(items) => setState(prev => prev ? ({ ...prev, shopItems: items }) : null)}
+                 <RatingView 
+                    currentDate={currentDate} ratings={state.ratings} ratingItems={state.ratingItems} 
+                    shopItems={state.shopItems} redemptions={state.redemptions} reviewTemplates={state.reviewTemplates}
+                    isShopOpen={isShopOpen} onToggleShop={setIsShopOpen}
+                    onUpdateRating={handleUpdateRating} onUpdateRatingItems={(items) => setState(prev => prev ? ({...prev, ratingItems: items}) : null)}
+                    onUpdateShopItems={(items) => setState(prev => prev ? ({...prev, shopItems: items}) : null)}
                     onRedeem={handleRedeem}
-                    onAddReviewTemplate={handleAddReviewTemplate}
-                    onUpdateReviewTemplate={handleUpdateReviewTemplate}
-                    onDeleteReviewTemplate={handleDeleteReviewTemplate}
-                />
+                    onAddReviewTemplate={handleAddReviewTemplate} onUpdateReviewTemplate={handleUpdateReviewTemplate} onDeleteReviewTemplate={handleDeleteReviewTemplate}
+                    isStatsModalOpen={isRatingStatsOpen} onCloseStats={() => setIsRatingStatsOpen(false)}
+                 />
             )}
 
             {activeTab === 'settings' && (
@@ -473,89 +457,78 @@ export function App() {
                     themeColor={state.themeColor} onUpdateThemeColor={(c) => setState(prev => prev ? ({ ...prev, themeColor: c }) : null)}
                 />
             )}
-
-            {/* Floating Action Button (Add Task) - Bottom Right */}
-            {activeTab === 'arrange' && (
-                <button 
-                    className="absolute bottom-6 right-6 z-[80] p-3.5 bg-primary text-white rounded-full shadow-xl shadow-primary/30 active:scale-90 transition-all animate-in zoom-in duration-200 flex items-center justify-center hover:opacity-90 md:bottom-8 md:right-8 md:p-4"
-                    onClick={() => setIsTodoModalOpen(true)}
-                    title="新建任务"
-                >
-                    <Plus size={24} />
-                </button>
-            )}
             </main>
 
-            {/* Mobile Bottom Navigation (Hidden on md+) */}
-            <nav className="h-16 bg-white border-t border-stone-100 flex items-start justify-center px-6 shrink-0 pb-safe z-50 md:hidden">
-                <div className="w-full h-full flex items-center justify-between gap-2">
-                    <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<ListTodo size={20} />} />
-                    <NavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<ClipboardCheck size={20} />} />
-                    <NavButton label="打分" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Star size={20} />} />
-                    <NavButton label="设置" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20} />} />
-                </div>
-            </nav>
+            {/* Mobile Bottom Navigation - Floating Blur Bar (White Theme) */}
+            <div className="md:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center pointer-events-none">
+                <nav className="w-full max-w-sm pointer-events-auto h-16 flex items-center justify-around px-2 bg-white/90 backdrop-blur-xl rounded-3xl shadow-float border border-white/20 overflow-hidden">
+                     <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<CalendarCheck2 size={24} />} />
+                     <NavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<Timer size={24} />} />
+                     <NavButton label="评估" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Trophy size={24} />} />
+                     <NavButton label="设置" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings2 size={24} />} />
+                </nav>
+            </div>
         </div>
 
-        {/* Sidebar Drawer Overlay */}
+        {/* Sidebar Drawer Overlay (Mobile) */}
         <div className={cn(
-            "absolute inset-0 z-[100] transition-all duration-300 pointer-events-none",
-            isSidebarOpen ? "bg-stone-900/40 backdrop-blur-sm pointer-events-auto" : "bg-transparent"
+            "absolute inset-0 z-[100] transition-all duration-300 pointer-events-none md:hidden",
+            isSidebarOpen ? "bg-stone-900/20 backdrop-blur-sm pointer-events-auto" : "bg-transparent"
         )} onClick={() => setIsSidebarOpen(false)}>
             <div 
                 className={cn(
-                    "absolute top-0 bottom-0 left-0 w-64 bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col pointer-events-auto",
+                    "absolute top-0 bottom-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col pointer-events-auto rounded-r-[2rem]",
                     isSidebarOpen ? "translate-x-0" : "-translate-x-full"
                 )}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="p-6 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
-                    <div className="flex items-center gap-3">
-                         <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center text-white shadow-sm">
-                             <Hexagon size={16} strokeWidth={2.5} />
+                <div className="p-8 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+                    <div className="flex items-center gap-3 text-primary">
+                         <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm text-primary border border-stone-100">
+                             <Hexagon size={22} strokeWidth={2.5} />
                          </div>
                          <div>
-                             <h2 className="font-black text-sm text-stone-900 leading-tight">ChronosFlow</h2>
-                             <p className="text-[9px] font-bold text-stone-400 uppercase tracking-wider">时间管理助手</p>
+                             <h2 className="font-black text-lg leading-tight uppercase tracking-tight text-stone-900">Chronos</h2>
+                             <p className="text-[10px] font-bold text-stone-400">Time Tracker</p>
                          </div>
                     </div>
-                    <button onClick={() => setIsSidebarOpen(false)} className="text-stone-400 hover:text-stone-800"><X size={20} /></button>
+                    <button onClick={() => setIsSidebarOpen(false)} className="text-stone-400 hover:text-stone-800 bg-white p-2 rounded-full shadow-sm border border-stone-100"><X size={20} /></button>
                 </div>
                 
-                <div className="p-4 flex-1 overflow-y-auto space-y-4">
+                <div className="p-6 flex-1 overflow-y-auto space-y-6">
                     {activeTab === 'arrange' && (
-                        <div className="space-y-2">
-                            <div className="px-2">
-                                <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">视图切换</span>
+                        <div className="space-y-3">
+                            <div className="px-1">
+                                <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">视图切换</span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 bg-stone-100 p-1 rounded-xl">
+                            <div className="flex gap-3">
                                 {(['list', 'week', 'month'] as ViewMode[]).map(m => (
                                     <button 
                                         key={m}
                                         onClick={() => handleSidebarAction(() => setViewMode(m))}
                                         className={cn(
-                                            "flex flex-col items-center justify-center py-2 rounded-lg transition-all",
-                                            viewMode === m ? "bg-white text-primary shadow-sm" : "text-stone-400 hover:text-stone-600"
+                                            "flex flex-col items-center justify-center flex-1 py-3 rounded-2xl transition-all border",
+                                            viewMode === m ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white text-stone-400 border-stone-100 hover:border-stone-200"
                                         )}
                                     >
-                                        {m === 'list' && <List size={16} />}
-                                        {m === 'week' && <CalendarRange size={16} />}
-                                        {m === 'month' && <CalendarDays size={16} />}
-                                        <span className="text-[9px] font-bold mt-1">{m === 'list' ? '列表' : (m === 'week' ? '周' : '月')}</span>
+                                        {m === 'list' && <List size={20} />}
+                                        {m === 'week' && <CalendarRange size={20} />}
+                                        {m === 'month' && <CalendarDays size={20} />}
+                                        <span className="text-[10px] font-bold mt-1.5">{m === 'list' ? '列表' : (m === 'week' ? '周' : '月')}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    <div className="space-y-2">
-                        <div className="px-2">
-                            <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">快捷功能</span>
+                    <div className="space-y-3">
+                        <div className="px-1">
+                            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">快捷功能</span>
                         </div>
 
-                        {(activeTab === 'arrange' || activeTab === 'record') && (
+                        {activeTab === 'arrange' && (
                             <SidebarButton 
-                                icon={<LayoutGrid size={18} />} 
+                                icon={<LayoutGrid size={20} />} 
                                 label={isTaskPoolOpen ? "关闭任务库" : "打开任务库"} 
                                 active={isTaskPoolOpen}
                                 onClick={() => handleSidebarAction(() => setIsTaskPoolOpen(!isTaskPoolOpen))} 
@@ -563,24 +536,17 @@ export function App() {
                         )}
 
                         {activeTab === 'arrange' && (
-                            <SidebarButton icon={<CalendarDays size={18} />} label="任务统计" onClick={() => handleSidebarAction(() => setIsTaskStatsOpen(true))} />
+                            <SidebarButton icon={<CalendarDays size={20} />} label="任务统计" onClick={() => handleSidebarAction(() => setIsTaskStatsOpen(true))} />
                         )}
                         
                         {activeTab === 'record' && (
-                            <SidebarButton icon={<BarChart2 size={18} />} label="时间统计" onClick={() => handleSidebarAction(() => setIsStatsModalOpen(true))} />
+                            <SidebarButton icon={<PieChart size={20} />} label="时间统计" onClick={() => handleSidebarAction(() => setIsTimeStatsOpen(true))} />
                         )}
 
                         {activeTab === 'rating' && (
-                            <>
-                                <SidebarButton icon={<TrendingUp size={18} />} label="评分趋势" onClick={() => handleSidebarAction(() => setIsRatingStatsOpen(true))} />
-                                <SidebarButton icon={<ShoppingBag size={18} />} label="积分商店" onClick={() => handleSidebarAction(() => setIsShopModalOpen(true))} />
-                            </>
+                            <SidebarButton icon={<TrendingUp size={20} />} label="评估统计" onClick={() => handleSidebarAction(() => setIsRatingStatsOpen(true))} />
                         )}
                     </div>
-                </div>
-                
-                <div className="p-4 border-t border-stone-100 bg-stone-50/30">
-                    <p className="text-[10px] text-stone-400 text-center font-medium">v1.0.3</p>
                 </div>
             </div>
         </div>
@@ -589,47 +555,33 @@ export function App() {
         {isTaskStatsOpen && (
           <TaskStatsModal isOpen={true} onClose={() => setIsTaskStatsOpen(false)} todos={state.todos} objectives={state.objectives} currentDate={currentDate} />
         )}
-
-        {isStatsModalOpen && (
-          <StatsView 
-            tasks={state.tasks} scheduleData={currentSchedule} recordData={currentRecord}
-            recordBlocks={currentRecordBlocks} // Pass TimeBlocks
-            allSchedules={state.schedule} recurringSchedule={state.recurringSchedule} allRecords={state.records}
-            dateObj={currentDate} isOpen={true} isModal={true} onClose={() => setIsStatsModalOpen(false)}
-          />
+        
+        {isTimeStatsOpen && (
+            <StatsView 
+                tasks={state.tasks} scheduleData={currentSchedule} recordData={currentRecord}
+                recordBlocks={currentRecordBlocks} 
+                allSchedules={state.schedule} recurringSchedule={state.recurringSchedule} allRecords={state.records}
+                dateObj={currentDate} isOpen={true} isModal={true} onClose={() => setIsTimeStatsOpen(false)}
+            />
         )}
-
-        {isRatingStatsOpen && (
-          <RatingStatsModal 
-            isOpen={true} 
-            onClose={() => setIsRatingStatsOpen(false)} 
-            ratings={state.ratings} 
-            ratingItems={state.ratingItems} 
-            currentDate={currentDate} 
-          />
-        )}
-
-        {/* Add Task Modal */}
-        <TodoEditorModal 
-          isOpen={isTodoModalOpen} 
-          onClose={() => setIsTodoModalOpen(false)} 
-          todo={null} 
-          objectives={state.objectives} 
-          onSave={(todo) => {
-            if (state) setState({ ...state, todos: [todo, ...state.todos] });
-          }} 
-          frogCount={state.todos.filter(t => t.isFrog && !t.isCompleted).length} 
-          defaultDate={currentDate}
-        />
       </div>
     </div>
   );
 }
 
 const NavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
-  <button onClick={onClick} className={cn("flex flex-col items-center justify-center flex-1 h-full rounded-2xl transition-all duration-200 gap-1", active ? "text-primary" : "text-stone-300 hover:text-stone-500")}>
-    <div className={cn("transition-transform duration-200", active ? "-translate-y-1" : "")}>{icon}</div>
-    {active && <span className="text-[9px] font-black tracking-widest uppercase leading-none animate-in fade-in slide-in-from-bottom-2">{label}</span>}
+  <button 
+    onClick={onClick} 
+    className={cn(
+        "flex-1 flex flex-col items-center justify-center h-full relative group cursor-pointer select-none transition-all duration-300",
+        active ? "text-primary" : "text-stone-400 hover:text-stone-600"
+    )}
+  >
+    {/* No Background Block */}
+    <div className="relative z-10 flex flex-col items-center gap-1 transition-transform duration-200 group-active:scale-90">
+        {React.cloneElement(icon as React.ReactElement, { strokeWidth: 2 })}
+        <span className="text-[10px] font-bold leading-none tracking-tight">{label}</span>
+    </div>
   </button>
 );
 
@@ -637,13 +589,14 @@ const SideNavButton = ({ active, onClick, icon, label }: { active: boolean, onCl
     <button 
         onClick={onClick} 
         className={cn(
-            "w-full flex flex-col items-center justify-center py-4 rounded-xl transition-all duration-200 gap-1.5 hover:bg-white hover:shadow-sm", 
-            active ? "text-primary bg-white shadow-md" : "text-stone-400"
+            "group relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ease-out border-2",
+            active 
+                ? "bg-white text-primary border-stone-100 shadow-sm scale-110" 
+                : "text-stone-400 border-transparent hover:bg-stone-50"
         )}
         title={label}
     >
-        <div className={cn("transition-transform duration-200", active ? "scale-110" : "")}>{icon}</div>
-        <span className="text-[10px] font-bold tracking-widest uppercase leading-none">{label}</span>
+        {icon}
     </button>
   );
 
@@ -651,12 +604,12 @@ const SidebarButton = ({ icon, label, onClick, active, className }: { icon: Reac
     <button 
         onClick={onClick}
         className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all active:scale-[0.98]",
-            active ? "bg-primary text-white shadow-md" : "hover:bg-stone-100 text-stone-600",
+            "w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all active:scale-[0.98] border",
+            active ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white hover:bg-stone-50 text-stone-600 border-stone-100 hover:border-stone-200",
             className
         )}
     >
         {icon}
-        <span className="text-xs font-bold">{label}</span>
+        <span className="text-sm font-bold">{label}</span>
     </button>
 );

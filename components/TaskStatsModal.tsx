@@ -84,11 +84,11 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
   }, [todos, objectives, currentDate]);
 
   const getHeatmapColor = (count: number) => {
-    if (count === 0) return 'bg-stone-50 border-stone-100';
-    if (count <= 2) return 'bg-indigo-100 border-indigo-200 text-indigo-400';
-    if (count <= 4) return 'bg-indigo-300 border-indigo-400 text-white';
-    if (count <= 6) return 'bg-indigo-500 border-indigo-600 text-white';
-    return 'bg-indigo-700 border-indigo-800 text-white';
+    if (count === 0) return 'bg-stone-50 border-stone-100 text-stone-300';
+    if (count <= 2) return 'bg-primary/10 border-primary/20 text-primary';
+    if (count <= 4) return 'bg-primary/40 border-primary/50 text-white';
+    if (count <= 6) return 'bg-primary/70 border-primary/80 text-white';
+    return 'bg-primary border-primary text-white';
   };
 
   if (!isOpen) return null;
@@ -98,13 +98,13 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
       <div className="bg-white rounded-2xl w-full max-w-lg h-[85vh] border border-stone-300 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 overflow-hidden">
         
         <header className="px-6 py-4 bg-stone-50 border-b border-stone-200 flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-white border border-stone-100 text-primary rounded-lg shadow-sm">
               <CalendarDays size={18} />
             </div>
             <div>
-              <h3 className="font-black text-stone-800 text-sm">任务统计</h3>
-              <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">
+              <h3 className="font-black text-stone-900 text-sm">任务统计</h3>
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
                 {format(currentDate, 'yyyy年 MMMM', { locale: zhCN })}
               </p>
             </div>
@@ -120,19 +120,19 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
           <section className="bg-white p-5 rounded-2xl border border-stone-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">任务达成热力图</h4>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <span className="text-[8px] text-stone-300 font-bold">少</span>
-                <div className="w-2 h-2 bg-stone-100 rounded-[2px]" />
-                <div className="w-2 h-2 bg-indigo-200 rounded-[2px]" />
-                <div className="w-2 h-2 bg-indigo-400 rounded-[2px]" />
-                <div className="w-2 h-2 bg-indigo-600 rounded-[2px]" />
+                <div className="w-2.5 h-2.5 bg-stone-100 rounded-[2px]" />
+                <div className="w-2.5 h-2.5 bg-primary/30 rounded-[2px]" />
+                <div className="w-2.5 h-2.5 bg-primary/60 rounded-[2px]" />
+                <div className="w-2.5 h-2.5 bg-primary rounded-[2px]" />
                 <span className="text-[8px] text-stone-300 font-bold">多</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
               {['一', '二', '三', '四', '五', '六', '日'].map(day => (
-                <div key={day} className="text-[8px] font-black text-stone-300 text-center mb-1">{day}</div>
+                <div key={day} className="text-[9px] font-black text-stone-300 text-center mb-1">{day}</div>
               ))}
               {calendarGrid.map(day => {
                 const data = heatmapData.find(d => isSameDay(d.date, day));
@@ -141,13 +141,13 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
                   <div 
                     key={day.toString()} 
                     className={cn(
-                      "aspect-square rounded-[3px] border flex items-center justify-center text-[8px] font-bold transition-all relative group",
+                      "aspect-square rounded-[4px] border flex items-center justify-center text-[9px] font-bold transition-all relative group",
                       isThisMonthDay ? getHeatmapColor(data?.count || 0) : "opacity-10 border-transparent bg-transparent"
                     )}
                   >
                     {isThisMonthDay && data && data.count > 0 && data.count}
                     {isThisMonthDay && (
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-2 py-1 rounded text-[8px] opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap">
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-2 py-1 rounded text-[8px] opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap shadow-lg font-medium">
                         {format(day, 'M月d日')}: 完成 {data?.count || 0}
                       </div>
                     )}
@@ -166,18 +166,18 @@ export const TaskStatsModal: React.FC<TaskStatsModalProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               {categoryStats.map(stat => (
-                <div key={stat.id} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-2 group hover:border-indigo-200 transition-all">
+                <div key={stat.id} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex flex-col gap-2 group hover:border-stone-200 transition-all">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stat.color }} />
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stat.color }} />
                     <span className="text-[11px] font-black text-stone-600 truncate">{stat.title}</span>
                   </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-stone-800 tracking-tighter group-hover:text-indigo-600 transition-colors">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-black text-stone-900 tracking-tighter">
                       {stat.count}
                     </span>
                     <span className="text-[9px] font-bold text-stone-300 uppercase tracking-widest">项任务</span>
                   </div>
-                  <div className="h-1 bg-stone-50 rounded-full overflow-hidden mt-1">
+                  <div className="h-1.5 bg-stone-50 rounded-full overflow-hidden mt-1">
                     <div 
                       className="h-full rounded-full transition-all duration-1000" 
                       style={{ 
