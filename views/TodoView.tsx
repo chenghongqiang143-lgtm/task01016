@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Todo, Objective, Task, ViewMode, HOURS, DayData } from '../types';
 import { TodoEditorModal } from '../components/TodoEditorModal';
@@ -383,12 +382,12 @@ export const TodoView: React.FC<TodoViewProps> = ({
                                     dailyTargetText = `${dailyActual.toFixed(1)} / ${dailyGoal.toFixed(1)}${t.targets.mode === 'duration' ? 'h' : ''}`;
                                     
                                     if (stats && stats.totalGoal) {
-                                        totalTargetText = `累计: ${stats.totalActual.toFixed(1)} / ${stats.totalGoal.toFixed(1)}`;
+                                        totalTargetText = `${stats.totalActual.toFixed(1)} / ${stats.totalGoal.toFixed(1)}`;
                                         totalProgress = Math.min((stats.totalActual / stats.totalGoal) * 100, 100);
                                     } else if (stats) {
-                                        totalTargetText = `累计: ${stats.totalActual.toFixed(1)}`;
+                                        totalTargetText = `${stats.totalActual.toFixed(1)}`;
                                     } else if (t.targets.totalValue) {
-                                        totalTargetText = `目标: ${t.targets.totalValue}`;
+                                        totalTargetText = `${t.targets.totalValue}`;
                                     }
                                 }
 
@@ -534,22 +533,43 @@ export const TodoView: React.FC<TodoViewProps> = ({
                     return (
                         <div key={catId} className="space-y-3">
                             <div className="flex items-center gap-2 px-1">
-                                <div className="w-1 h-3 rounded-full" style={{ backgroundColor: obj?.color }} />
                                 <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter">{obj?.title}</span>
                             </div>
                             <div className="space-y-2">
                                 {catTasks.map(task => {
                                     const status = getStatusText(task.id);
+                                    // 计算侧边栏累计进度
+                                    const hasLongTermGoal = task.targets?.totalValue && task.targets.totalValue > 0;
+                                    const stats = taskStats[task.id];
+                                    const progressPercent = Math.min(((stats?.totalActual || 0) / (task.targets?.totalValue || 1)) * 100, 100);
+                                    
                                     return (
                                         <button 
                                             key={task.id}
                                             onClick={() => handleTaskSelect(task)}
-                                            className="w-full text-left p-3 bg-stone-50/50 rounded-xl border border-stone-100 hover:border-primary/30 transition-all group active:scale-[0.98] shadow-sm"
+                                            className="w-full text-left p-3 bg-stone-50/50 rounded-xl border border-stone-100 hover:border-primary/30 transition-all group active:scale-[0.98] shadow-sm flex flex-col relative overflow-hidden"
                                         >
-                                            <div className="font-bold text-xs text-stone-700 group-hover:text-primary transition-colors">{task.name}</div>
-                                            <div className="flex items-center gap-1.5 mt-1 text-stone-400">
-                                                <History size={10} />
-                                                <span className="text-[9px] font-bold">{status}</span>
+                                            {/* Integrated Progress Background */}
+                                            {hasLongTermGoal && (
+                                                <div 
+                                                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-[0.08]"
+                                                    style={{ width: `${progressPercent}%`, backgroundColor: task.color }}
+                                                />
+                                            )}
+
+                                            <div className="relative z-10">
+                                                <div className="font-bold text-xs text-stone-700 group-hover:text-primary transition-colors">{task.name}</div>
+                                                
+                                                {hasLongTermGoal && (
+                                                    <div className="mt-2 w-full flex items-center justify-between text-[8px] font-black text-primary/70 mb-1">
+                                                        <span>{ (stats?.totalActual || 0).toFixed(1) } / { task.targets?.totalValue?.toFixed(1) }</span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center gap-1.5 mt-2 text-stone-400">
+                                                    <History size={10} />
+                                                    <span className="text-[9px] font-bold">{status}</span>
+                                                </div>
                                             </div>
                                         </button>
                                     );

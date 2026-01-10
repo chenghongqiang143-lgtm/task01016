@@ -3,7 +3,7 @@ import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { cn, formatDate, generateId } from '../utils';
-import { LayoutGrid, X, ChevronLeft, ChevronRight, Repeat, Clock, Columns, History, Layers } from 'lucide-react';
+import { LayoutGrid, X, ChevronLeft, ChevronRight, Repeat, Clock, Columns, History, Layers, Flag } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO, isValid, differenceInCalendarDays } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -101,26 +101,57 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     }
   }, [activeSide, selectedHours, onEditingStatusChange]);
 
-  const taskProgress = useMemo(() => {
-    const stats: Record<string, number> = {};
-    tasks.forEach(t => stats[t.id] = 0);
-    const hoursData = recordData.hours || {};
-    HOURS.forEach(h => {
-      const ids = hoursData[h] || [];
-      ids.forEach(tid => {
-        const currentVal = stats[tid];
-        if (typeof currentVal === 'number') {
-          const task = tasks.find(t => t.id === tid);
-          if (task?.targets?.mode === 'count') {
-            stats[tid] = currentVal + 1;
-          } else {
-            stats[tid] = currentVal + (1 / Math.max(ids.length, 1));
-          }
+  const taskStats = useMemo(() => {
+    const stats: Record<string, { todayActual: number; totalActual: number }> = {};
+    const recordedValues = new Map<string, number>();
+
+    tasks.forEach(t => stats[t.id] = { todayActual: 0, totalActual: 0 });
+    
+    // 汇总所有历史记录
+    Object.entries(allRecords).forEach(([dateStr, record]) => {
+      const dayData = record as DayData;
+      if (!dayData || !dayData.hours) return;
+      
+      HOURS.forEach(h => {
+        const rawIds = dayData.hours[h];
+        if (Array.isArray(rawIds)) {
+          const ids = rawIds as string[];
+          ids.forEach(tid => {
+            if (stats[tid]) {
+              const increment = 1 / Math.max(ids.length, 1);
+              stats[tid].totalActual += increment;
+              if (dateStr === formatDate(currentDate)) {
+                  stats[tid].todayActual += increment;
+              }
+              const key = `${tid}_${dateStr}`;
+              recordedValues.set(key, (recordedValues.get(key) || 0) + increment);
+            }
+          });
         }
       });
     });
+
+    // 从已完成 Todo 补充累计值
+    todos.forEach(t => {
+        if (t.isCompleted && t.templateId && stats[t.templateId]) {
+            const task = tasks.find(tk => tk.id === t.templateId);
+            const mode = task?.targets?.mode || 'duration';
+            const refDate = t.completedAt || t.startDate; 
+            if (mode === 'count') {
+                stats[t.templateId].totalActual += 1;
+            } else if (mode === 'duration' && refDate) {
+                const key = `${t.templateId}_${refDate}`;
+                const recorded = recordedValues.get(key) || 0;
+                const targetVal = t.targets?.value || 0;
+                if (targetVal > recorded) {
+                    stats[t.templateId].totalActual += (targetVal - recorded);
+                }
+            }
+        }
+    });
+
     return stats;
-  }, [tasks, recordData]);
+  }, [tasks, allRecords, todos, currentDate]);
 
   const sortedCategories = useMemo(() => {
     const existingCats = new Set(tasks.map(t => t.category || '未分类'));
@@ -201,10 +232,20 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   const renderTaskButton = (task: Task) => {
     const isSelected = isTaskInActiveSlot(task.id);
-    const currentVal = taskProgress[task.id] || 0;
+    const stats = taskStats[task.id];
+    const todayActual = stats?.todayActual || 0;
+    const totalActual = stats?.totalActual || 0;
+    
     const target = task.targets;
     const dailyTarget = target ? (target.value / target.frequency) : 0;
-    const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
+    const hasLongTermGoal = target?.totalValue && target.totalValue > 0;
+    const totalGoal = target?.totalValue;
+
+    // 优先显示长期目标进度，如果存在
+    const progressPercent = hasLongTermGoal 
+      ? Math.min((totalActual / (totalGoal || 1)) * 100, 100)
+      : (dailyTarget > 0 ? Math.min((todayActual / dailyTarget) * 100, 100) : 0);
+      
     const statusText = getStatusText(task.id);
 
     return (
@@ -215,7 +256,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             onPointerUp={handleTaskPointerUp}
             onPointerLeave={handleTaskPointerUp}
             className={cn(
-                "px-3 py-2 rounded-xl border transition-all cursor-pointer relative shadow-sm flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[44px]",
+                "px-3 py-2 rounded-xl border transition-all cursor-pointer relative shadow-sm flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[50px]",
                 isSelected 
                     ? "text-white z-10" 
                     : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
@@ -224,15 +265,22 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         >
             {!isSelected && (
                 <div 
-                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-10"
-                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${task.color}, transparent)` }}
+                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-[0.12]"
+                    style={{ width: `${progressPercent}%`, backgroundColor: task.color }}
                 />
             )}
             <div className="relative z-10 flex items-center gap-2 w-full min-w-0">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isSelected ? 'white' : task.color }} />
                 <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
             </div>
-            <div className={cn("relative z-10 flex items-center gap-1 mt-1 text-[8px] font-bold", isSelected ? "text-white/60" : "text-stone-300")}>
+            
+            {hasLongTermGoal && (
+                <div className={cn("relative z-10 flex items-center gap-0.5 mt-1 text-[7px] font-black", isSelected ? "text-white/50" : "text-primary/60")}>
+                    <Flag size={7} />
+                    <span>{totalActual.toFixed(1)} / {totalGoal?.toFixed(1)}</span>
+                </div>
+            )}
+
+            <div className={cn("relative z-10 flex items-center gap-1 mt-0.5 text-[8px] font-bold", isSelected ? "text-white/60" : "text-stone-300")}>
                 <History size={8} />
                 <span>{statusText}</span>
             </div>
@@ -288,7 +336,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                         return (
                             <div key={catId} className="space-y-3">
                                 <div className="flex items-center gap-2 px-1">
-                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: obj?.color || '#ccc' }} />
                                     <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{obj?.title}</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
@@ -301,7 +348,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                     {tasks.filter(t => !t.category || !categoryOrder.includes(t.category)).length > 0 && (
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 px-1">
-                                <Layers size={10} className="text-stone-300" />
                                 <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">其他</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2">

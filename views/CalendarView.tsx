@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Todo, DayData, Task, Objective } from '../types';
 import { cn, formatDate } from '../utils';
@@ -57,9 +58,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const weeks = ['一', '二', '三', '四', '五', '六', '日'];
 
     return (
-      <div className="flex flex-col h-full bg-white animate-in fade-in duration-300">
+      <div className="flex flex-col h-full bg-white animate-in fade-in duration-300 overflow-y-auto custom-scrollbar">
         {/* Calendar Grid */}
-        <div className="p-4">
+        <div className="p-4 shrink-0">
            <div className="grid grid-cols-7 mb-2">
               {weeks.map(w => (
                   <div key={w} className="text-center text-[10px] font-black text-stone-300 py-2">{w}</div>
@@ -105,8 +106,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            </div>
         </div>
 
-        {/* Selected Day Detail */}
-        <div className="flex-1 bg-stone-50 border-t border-stone-100 p-6 overflow-y-auto custom-scrollbar">
+        {/* Selected Day Detail - Removed its own overflow to scroll with the grid */}
+        <div className="flex-1 bg-stone-50 border-t border-stone-100 p-6 pb-40">
             <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <CalendarDays size={12} /> {format(currentDate, 'M月d日')} 概览
             </h3>
@@ -150,7 +151,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
     return (
       <div className="flex flex-col h-full bg-stone-50 animate-in slide-in-from-right-4 duration-300">
-         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+         {/* Added pb-32 to prevent bottom navigation bar overlap */}
+         <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40 custom-scrollbar">
             {weekDays.map(day => {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = isSameDay(day, currentDate);
