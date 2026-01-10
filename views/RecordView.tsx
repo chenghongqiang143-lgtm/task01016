@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import { Task, DayData, HOURS } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
@@ -79,7 +78,7 @@ export const RecordView: React.FC<RecordViewProps> = ({
                <button 
                  onClick={() => setShowTaskSelection(true)}
                  className="p-1.5 text-stone-400 hover:text-secondary transition-colors"
-                 title="选择任务"
+                 title="选择任务库"
                >
                  <LayoutList size={18} />
                </button>
@@ -109,7 +108,7 @@ export const RecordView: React.FC<RecordViewProps> = ({
               <button onClick={() => setShowTaskSelection(false)} className="p-1 text-stone-400 hover:text-stone-600 transition-colors">
                 <ChevronRight size={16} />
               </button>
-              <h2 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">任务选择</h2>
+              <h2 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">任务库</h2>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto px-1.5 pb-32 space-y-4 pt-3 custom-scrollbar">

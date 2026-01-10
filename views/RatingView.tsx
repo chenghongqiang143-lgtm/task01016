@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { DayRating, RatingItem, ShopItem, Redemption, ReviewTemplate } from '../types';
 import { cn, formatDate, generateId } from '../utils';
@@ -24,6 +23,7 @@ interface RatingViewProps {
   onUpdateReviewTemplate?: (template: ReviewTemplate) => void;
   onDeleteReviewTemplate?: (id: string) => void;
   isStatsModalOpen: boolean;
+  onOpenStats: () => void;
   onCloseStats: () => void;
 }
 
@@ -46,10 +46,10 @@ export const RatingView: React.FC<RatingViewProps> = ({
   onUpdateReviewTemplate,
   onDeleteReviewTemplate,
   isStatsModalOpen,
+  onOpenStats,
   onCloseStats
 }) => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  // Remove internal isShopModalOpen, use props
   const [isShopEditMode, setIsShopEditMode] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [shopTab, setShopTab] = useState<'buy' | 'history'>('buy');
@@ -58,7 +58,6 @@ export const RatingView: React.FC<RatingViewProps> = ({
   const [editingShopItem, setEditingShopItem] = useState<ShopItem | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<ReviewTemplate | null>(null);
 
-  // Use back handler for modals
   useModalBackHandler(isConfigModalOpen, () => setIsConfigModalOpen(false));
   useModalBackHandler(isShopOpen, () => onToggleShop?.(false));
   useModalBackHandler(isTemplateModalOpen, () => setIsTemplateModalOpen(false));
@@ -68,12 +67,17 @@ export const RatingView: React.FC<RatingViewProps> = ({
   useModalBackHandler(!!editingTemplate, () => setEditingTemplate(null));
 
   const dateKey = formatDate(currentDate);
-  const currentRating = ratings[dateKey] || { scores: {}, comment: '' };
+  // Ensure we handle cases where rating exists but properties might be missing
+  const currentRating = useMemo(() => {
+      const r = ratings[dateKey];
+      if (!r) return { scores: {}, comment: '' };
+      return { scores: r.scores || {}, comment: r.comment || '' };
+  }, [ratings, dateKey]);
 
   const { lifetimeScore, balance } = useMemo(() => {
     let totalScore = 0;
     Object.values(ratings).forEach((day: DayRating) => {
-        if (day.scores) {
+        if (day && day.scores) {
             const daySum = (Object.values(day.scores) as number[]).reduce((a, b) => a + (b || 0), 0);
             totalScore += daySum;
         }
@@ -154,17 +158,8 @@ export const RatingView: React.FC<RatingViewProps> = ({
                 </div>
                 <div className="flex gap-2">
                     <button 
-                        onClick={onCloseStats} // Trigger stats via prop callback if needed, but here button is mostly redundant if in sidebar.
-                        // Actually let's keep it as an on-screen shortcut too.
-                        // But wait, the prop is onCloseStats... we need onOpenStats if we want an on-screen button.
-                        // However, previous code removed the internal state.
-                        // Let's assume the user uses the sidebar or we re-add a prop for opening.
-                        // For now, I will map it to a prop if provided, or just keep the button to toggle via prop logic if applicable.
-                        // Since I passed `isStatsModalOpen` and `onCloseStats`, I can't easily "open" it from here unless I have `onOpenStats`.
-                        // But the requirement was "Sidebar add rating statistics".
-                        // I'll leave the button here but it might need an `onOpenStats` prop to work.
-                        // Let's assume the parent controls it.
-                        className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full shadow-lg transition-all active:scale-90 hidden" 
+                        onClick={onOpenStats} 
+                        className="p-2.5 bg-white/20 hover:bg-white/30 text-white rounded-full shadow-lg transition-all active:scale-90" 
                         title="打分统计"
                     >
                         <TrendingUp size={18} />
@@ -350,7 +345,7 @@ export const RatingView: React.FC<RatingViewProps> = ({
 
       {/* Review Template Selection Modal */}
       {isTemplateModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
             <div className="bg-white rounded-[1.5rem] w-full max-w-sm flex flex-col border border-stone-300 shadow-2xl overflow-hidden max-h-[70vh] animate-in zoom-in-95 duration-200">
                 <div className="px-5 py-4 bg-stone-50 border-b border-stone-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-2">

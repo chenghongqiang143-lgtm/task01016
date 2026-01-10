@@ -69,6 +69,7 @@ export const getInitialState = (): AppState => ({
   objectives: DEFAULT_OBJECTIVES,
   tasks: DEFAULT_TASKS,
   todos: [],
+  memoItems: [],
   categoryOrder: DEFAULT_OBJECTIVES.map(o => o.id),
   ratingItems: DEFAULT_RATING_ITEMS,
   shopItems: DEFAULT_SHOP_ITEMS,
@@ -100,6 +101,7 @@ export const loadState = (): AppState => {
     if (!parsed.categoryOrder) parsed.categoryOrder = parsed.objectives.map((o: Objective) => o.id);
 
     if (!parsed.todos) parsed.todos = [];
+    if (!parsed.memoItems) parsed.memoItems = [];
     if (!parsed.recurringSchedule) parsed.recurringSchedule = {};
     if (!parsed.ratingItems) parsed.ratingItems = DEFAULT_RATING_ITEMS;
     if (!parsed.ratings) parsed.ratings = {};

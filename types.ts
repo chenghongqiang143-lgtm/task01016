@@ -54,6 +54,14 @@ export interface Todo {
   currentValue?: number; // 当前进度值
 }
 
+export interface MemoItem {
+  id: string;
+  title: string;
+  lastDone: string; // yyyy-MM-dd
+  remarks: string;
+  createdAt: string;
+}
+
 export interface DayData {
   hours: Record<number, string[]>;
 }
@@ -91,9 +99,10 @@ export interface ReviewTemplate {
   content: string;
 }
 
-// 4页：安排，记录，打分，设置
-export type Tab = 'arrange' | 'record' | 'rating' | 'settings';
+// 4页：安排(包含习惯/记事)，记录，视图，打分
+export type Tab = 'arrange' | 'record' | 'calendar' | 'rating' | 'settings';
 export type ViewMode = 'list' | 'week' | 'month';
+export type ArrangeMode = 'habits' | 'notes';
 
 export interface RolloverSettings {
   enabled: boolean;
@@ -104,19 +113,20 @@ export interface AppState {
   objectives: Objective[];
   tasks: Task[];
   todos: Todo[];
+  memoItems: MemoItem[]; // 新增：记事任务
   categoryOrder: string[];
   ratingItems: RatingItem[];
   shopItems: ShopItem[];
   redemptions: Redemption[];
-  reviewTemplates: ReviewTemplate[]; // New: Templates for daily review
+  reviewTemplates: ReviewTemplate[]; 
   schedule: Record<string, DayData>;
-  scheduleBlocks?: Record<string, TimeBlock[]>; // New: Time blocks for schedule
+  scheduleBlocks?: Record<string, TimeBlock[]>; 
   recurringSchedule: Record<number, string[]>;
   records: Record<string, DayData>;
-  recordBlocks?: Record<string, TimeBlock[]>; // New: Time blocks for records
+  recordBlocks?: Record<string, TimeBlock[]>; 
   ratings: Record<string, DayRating>;
   rolloverSettings: RolloverSettings;
-  themeColor: string; // Theme Color Hex
+  themeColor: string; 
 }
 
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
@@ -51,6 +50,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   const [isRecurringMode, setIsRecurringMode] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activePoolCategory, setActivePoolCategory] = useState<string>('all');
   const scrollRef = useRef<HTMLDivElement>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,8 +76,11 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     const stats: Record<string, number> = {};
     tasks.forEach(t => stats[t.id] = 0);
     
+    // Safety check for recordData
+    const hoursData = recordData.hours || {};
+
     HOURS.forEach(h => {
-      const ids = recordData.hours[h] || [];
+      const ids = hoursData[h] || [];
       ids.forEach(tid => {
         const currentVal = stats[tid];
         if (typeof currentVal === 'number') {
@@ -97,18 +100,18 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     const existingCats = new Set(tasks.map(t => t.category || '未分类'));
     const ordered = categoryOrder.filter(c => existingCats.has(c));
     const others = Array.from(existingCats).filter(c => !categoryOrder.includes(c));
-    return [...ordered, ...others];
+    return ['all', ...ordered, ...others];
   }, [tasks, categoryOrder]);
 
   const getObjectiveTitle = (id: string) => {
+    if (id === 'all') return '全部';
     if (id === '未分类') return '未分类';
     const obj = objectives.find(o => o.id === id);
     return obj ? obj.title : '未知分类';
   };
 
   const handleHourClick = (hour: number, side: 'plan' | 'actual') => {
-    if (viewMode !== 'day') return; // Only allow editing in Day view for now to avoid complexity
-
+    if (viewMode !== 'day') return;
     if (activeSide !== side) {
         setActiveSide(side);
         setSelectedHours(new Set([hour]));
@@ -176,21 +179,13 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   const PoolContent = () => (
     <div className="flex flex-col h-full bg-white">
-        <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-10 shrink-0 h-10">
-            <div className="flex items-center gap-2">
-                <h3 className="text-[9px] font-bold text-stone-900 uppercase tracking-widest flex items-center gap-1.5">
-                    <LayoutGrid size={10} /> 任务库 (长按)
-                </h3>
-            </div>
+        <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 shrink-0 h-10">
+            <h3 className="text-[9px] font-bold text-stone-900 uppercase tracking-widest flex items-center gap-1.5">
+                <LayoutGrid size={10} /> 任务库
+            </h3>
             <div className="flex items-center gap-2">
               {activeSide === 'plan' && (
-                  <button 
-                      onClick={() => setIsRecurringMode(!isRecurringMode)}
-                      className={cn(
-                          "px-2 py-0.5 rounded-md text-[8px] font-bold uppercase transition-all flex items-center gap-1 border",
-                          isRecurringMode ? "bg-primary text-white border-primary" : "bg-stone-50 text-stone-400 border-stone-100 hover:border-stone-300"
-                      )}
-                  >
+                  <button onClick={() => setIsRecurringMode(!isRecurringMode)} className={cn("px-2 py-0.5 rounded-md text-[8px] font-bold uppercase transition-all flex items-center gap-1 border", isRecurringMode ? "bg-primary text-white border-primary" : "bg-stone-50 text-stone-400 border-stone-100")}>
                       <Repeat size={10} /> {isRecurringMode ? '已开启' : '循环'}
                   </button>
               )}
@@ -199,59 +194,68 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
               </button>
             </div>
         </div>
+        
+        {/* 记录页任务库分类顶栏：不换行滚动 */}
+        <div className="px-3 py-2 bg-white border-b border-stone-50 shrink-0">
+            <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                {sortedCategories.map(catId => {
+                    const isActive = activePoolCategory === catId;
+                    const obj = objectives.find(o => o.id === catId);
+                    return (
+                        <button 
+                            key={catId} 
+                            onClick={() => setActivePoolCategory(catId)}
+                            className={cn(
+                                "px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all border shrink-0",
+                                isActive ? "bg-primary text-white border-primary" : "bg-stone-50 text-stone-400 border-stone-100"
+                            )}
+                        >
+                            {getObjectiveTitle(catId)}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar pb-32">
-            {sortedCategories.map(cat => (
-                <div key={cat} className="space-y-2">
-                    <div className="px-1 flex items-center gap-2">
-                        <span className="text-[9px] font-bold text-stone-400 uppercase tracking-[0.2em] truncate">{getObjectiveTitle(cat)}</span>
-                        <div className="h-px flex-1 bg-stone-100" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                        {tasks.filter(t => (t.category || '未分类') === cat).map(task => {
-                            const isSelected = isTaskInActiveSlot(task.id);
-                            const currentVal = taskProgress[task.id] || 0;
-                            const target = task.targets;
-                            const dailyTarget = target ? (target.value / target.frequency) : 0;
-                            const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
-                            const isCompleted = progress >= 100;
+            <div className="grid grid-cols-2 gap-2">
+                {tasks.filter(t => activePoolCategory === 'all' || (t.category || '未分类') === activePoolCategory).map(task => {
+                    const isSelected = isTaskInActiveSlot(task.id);
+                    const currentVal = taskProgress[task.id] || 0;
+                    const target = task.targets;
+                    const dailyTarget = target ? (target.value / target.frequency) : 0;
+                    const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
 
-                            return (
+                    return (
+                        <div 
+                            key={task.id}
+                            onClick={() => handleToggleTaskInSlot(task.id)}
+                            onPointerDown={() => handleTaskPointerDown(task)}
+                            onPointerUp={handleTaskPointerUp}
+                            onPointerLeave={handleTaskPointerUp}
+                            className={cn(
+                                "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none touch-manipulation",
+                                isSelected 
+                                    ? "text-white z-10" 
+                                    : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
+                            )}
+                            style={isSelected ? { background: `linear-gradient(135deg, ${task.color}, ${task.color}AA)` } : {}}
+                        >
+                            {!isSelected && (
                                 <div 
-                                    key={task.id}
-                                    onClick={() => handleToggleTaskInSlot(task.id)}
-                                    onPointerDown={() => handleTaskPointerDown(task)}
-                                    onPointerUp={handleTaskPointerUp}
-                                    onPointerLeave={handleTaskPointerUp}
-                                    className={cn(
-                                        "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none touch-manipulation",
-                                        isSelected 
-                                            ? "bg-primary border-primary text-white z-10" 
-                                            : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
-                                    )}
-                                >
-                                    {!isSelected && (
-                                        <div 
-                                            className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0"
-                                            style={{ 
-                                                width: `${progress}%`, 
-                                                backgroundColor: `${task.color}15`
-                                            }}
-                                        />
-                                    )}
+                                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-10"
+                                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${task.color}, transparent)` }}
+                                />
+                            )}
 
-                                    <div className="relative z-10 flex items-center gap-2 w-full min-w-0">
-                                        <div className={cn(
-                                            "w-1.5 h-1.5 rounded-full shrink-0",
-                                            isCompleted && !isSelected ? "animate-pulse shadow-[0_0_4px_rgba(0,0,0,0.2)]" : ""
-                                        )} style={{ backgroundColor: isSelected ? 'white' : task.color }} />
-                                        <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ))}
+                            <div className="relative z-10 flex items-center gap-2 w-full min-w-0">
+                                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isSelected ? 'white' : task.color }} />
+                                <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     </div>
   );
@@ -263,32 +267,23 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
     return (
         <div className="flex flex-col min-h-full pb-32">
-             {/* Sticky Header Row */}
              <div className="flex sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-100 shadow-sm shrink-0">
-                 {/* Empty corner for Time Column */}
                  <div className="w-10 flex-shrink-0 bg-white border-r border-stone-50"></div>
-                 {/* Day Headers */}
                  <div className="flex-1 flex overflow-hidden">
                      {days.map(day => {
                          const isToday = isSameDay(day, new Date());
                          const isSelected = isSameDay(day, currentDate);
                          return (
                              <div key={day.toString()} className={cn("flex-1 flex flex-col items-center justify-center py-2 border-r border-stone-50/50", isSelected ? "bg-stone-50/50" : "")}>
-                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-primary" : "text-stone-400")}>
-                                     {format(day, 'EEE', { locale: zhCN })}
-                                 </span>
-                                 <span className={cn("text-xs font-black leading-none mt-0.5", isToday ? "text-primary" : "text-stone-600")}>
-                                     {format(day, 'd')}
-                                 </span>
+                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-primary" : "text-stone-400")}>{format(day, 'EEE', { locale: zhCN })}</span>
+                                 <span className={cn("text-xs font-black leading-none mt-0.5", isToday ? "text-primary" : "text-stone-600")}>{format(day, 'd')}</span>
                              </div>
                          );
                      })}
                  </div>
              </div>
 
-             {/* Grid Body */}
              <div className="flex flex-1">
-                  {/* Time Column - Moves with vertical scroll but stays left */}
                   <div className="w-10 flex-shrink-0 bg-white border-r border-stone-100 z-10">
                       {HOURS.map(h => (
                           <div key={h} className="h-9 flex items-center justify-center text-[9px] font-mono text-stone-300 border-b border-stone-50">
@@ -297,7 +292,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                       ))}
                   </div>
 
-                  {/* Days Columns */}
                   <div className="flex-1 flex">
                       {days.map(day => {
                           const dKey = formatDate(day);
@@ -307,7 +301,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                           return (
                               <div key={dKey} className={cn("flex-1 border-r border-stone-50 flex flex-col", isSelected ? "bg-stone-50/20" : "")}>
                                   {HOURS.map(h => {
-                                      const tasksInHour = (record.hours[h] || []).map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
+                                      const tasksInHour = (record.hours && record.hours[h] ? record.hours[h] : []).map(id => tasks.find(t => t.id === id)).filter((t): t is Task => !!t);
                                       return (
                                           <div key={h} className="h-9 border-b border-stone-50 p-0.5 relative group">
                                               {tasksInHour.length > 0 && (
@@ -315,14 +309,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                                                       {tasksInHour.slice(0, 2).map((t, idx) => (
                                                           <div 
                                                             key={idx} 
-                                                            className="flex-1 h-full rounded-[2px] opacity-80 hover:opacity-100 transition-opacity" 
-                                                            style={{ backgroundColor: t.color }} 
+                                                            className="flex-1 h-full rounded-[2px] opacity-80" 
+                                                            style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}AA)` }} 
                                                             title={t.name}
                                                           />
                                                       ))}
-                                                       {tasksInHour.length > 2 && (
-                                                           <div className="w-1 h-full bg-stone-200 rounded-[1px]" />
-                                                       )}
+                                                       {tasksInHour.length > 2 && <div className="w-1 h-full bg-stone-200 rounded-[1px]" />}
                                                   </div>
                                               )}
                                           </div>
@@ -343,8 +335,8 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         <TimelineRow 
             key={hour} 
             hour={hour} 
-            assignedScheduleIds={scheduleData.hours[hour] || []} 
-            assignedRecordIds={recordData.hours[hour] || []} 
+            assignedScheduleIds={scheduleData.hours ? (scheduleData.hours[hour] || []) : []} 
+            assignedRecordIds={recordData.hours ? (recordData.hours[hour] || []) : []} 
             allTasks={tasks} 
             onScheduleClick={(h) => handleHourClick(h, 'plan')}
             onRecordClick={(h) => handleHourClick(h, 'actual')}
@@ -357,35 +349,20 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   return (
     <div className="flex h-full bg-white overflow-hidden relative">
-      <aside className={cn(
-        "absolute left-0 top-0 bottom-0 w-[240px] bg-white border-r border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-[10px_0_40px_rgba(0,0,0,0.08)]",
-        activeSide === 'actual' ? "translate-x-0" : "-translate-x-full"
-      )}>
+      <aside className={cn("absolute left-0 top-0 bottom-0 w-[240px] bg-white border-r border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-float", activeSide === 'actual' ? "translate-x-0" : "-translate-x-full")}>
         <PoolContent />
       </aside>
 
-      <aside className={cn(
-        "absolute right-0 top-0 bottom-0 w-[240px] bg-white border-l border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-[-10px_0_40px_rgba(0,0,0,0.08)]",
-        activeSide === 'plan' ? "translate-x-0" : "translate-x-full"
-      )}>
+      <aside className={cn("absolute right-0 top-0 bottom-0 w-[240px] bg-white border-l border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-float", activeSide === 'plan' ? "translate-x-0" : "translate-x-full")}>
         <PoolContent />
       </aside>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar">
         <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
-            {/* View Switcher */}
             <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
                 {(['day', 'week'] as ViewMode[]).map(m => (
-                    <button 
-                        key={m}
-                        onClick={() => { setViewMode(m); setActiveSide(null); }}
-                        className={cn(
-                            "px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1",
-                            viewMode === m ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600"
-                        )}
-                    >
-                        {m === 'day' && <Clock size={12} />}
-                        {m === 'week' && <Columns size={12} />}
+                    <button key={m} onClick={() => { setViewMode(m); setActiveSide(null); }} className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1", viewMode === m ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600")}>
+                        {m === 'day' ? <Clock size={12} /> : <Columns size={12} />}
                         {m === 'day' ? '日' : '周'}
                     </button>
                 ))}

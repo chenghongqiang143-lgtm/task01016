@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Objective } from '../types';
 import { X, Save, Target, AlignLeft, Trash2, AlertTriangle } from 'lucide-react';
@@ -110,29 +109,34 @@ export const ObjectiveEditorModal: React.FC<ObjectiveEditorModalProps> = ({
           
           <div className="pt-2 flex gap-2">
              {objective && onDelete && (
-                 <button 
-                    type="button" 
-                    onClick={() => {
-                        if (showDeleteConfirm) {
-                            onDelete(objective.id);
-                            onClose();
-                        } else {
-                            setShowDeleteConfirm(true);
-                        }
-                    }} 
-                    className={cn(
-                        "px-4 rounded-xl transition-all flex items-center justify-center gap-2",
-                        showDeleteConfirm 
-                            ? "bg-red-500 text-white flex-1 animate-in slide-in-from-right-2" 
-                            : "bg-stone-50 border border-stone-100 text-stone-400 hover:text-red-500 hover:bg-rose-50"
-                    )}
-                 >
-                     {showDeleteConfirm ? (
-                         <span className="font-black text-[10px] whitespace-nowrap px-1">确认删除？</span>
+                 <div className={cn("flex transition-all duration-300 overflow-hidden", showDeleteConfirm ? "flex-1 gap-2" : "w-11")}>
+                     {!showDeleteConfirm ? (
+                         <button 
+                             type="button" 
+                             onClick={() => setShowDeleteConfirm(true)} 
+                             className="w-11 h-11 shrink-0 rounded-xl bg-stone-50 border border-stone-100 text-stone-400 hover:text-red-500 hover:bg-rose-50 flex items-center justify-center transition-all"
+                         >
+                             <Trash2 size={18} />
+                         </button>
                      ) : (
-                         <Trash2 size={18} />
+                         <>
+                             <button 
+                                 type="button" 
+                                 onClick={() => setShowDeleteConfirm(false)} 
+                                 className="flex-1 py-3 bg-stone-100 text-stone-600 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+                             >
+                                 取消
+                             </button>
+                             <button 
+                                 type="button" 
+                                 onClick={() => { onDelete(objective.id); onClose(); }} 
+                                 className="flex-1 py-3 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20 active:scale-95 transition-all"
+                             >
+                                 确认删除
+                             </button>
+                         </>
                      )}
-                 </button>
+                 </div>
              )}
              
              {!showDeleteConfirm && (

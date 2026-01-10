@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Task, Objective, DayData, RolloverSettings, HOURS } from '../types';
 import { cn, formatDate } from '../utils';
@@ -82,8 +81,11 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
     const stats: Record<string, number> = {};
     tasks.forEach(t => stats[t.id] = 0);
     
+    // Safety check for malformed records
+    const hoursData = todayRecord.hours || {};
+
     HOURS.forEach(h => {
-      const ids = todayRecord.hours[h] || [];
+      const ids = hoursData[h] || [];
       ids.forEach(tid => {
         if (stats[tid] !== undefined) {
           const task = tasks.find(t => t.id === tid);
@@ -173,7 +175,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
   };
 
   return (
-    <div className="h-full bg-stone-50 overflow-y-auto custom-scrollbar relative">
+    <div className="h-full bg-stone-50 overflow-y-auto relative no-scrollbar">
       <div className="max-w-3xl mx-auto p-4 space-y-4 pb-32">
         
         {/* 系统规则设置区域 */}
@@ -212,18 +214,15 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   <div className="pt-2 border-t border-stone-50 animate-in fade-in slide-in-from-top-4">
                       <div className="flex items-center justify-between px-1">
                           <span className="text-[10px] font-bold text-stone-500">最大顺延天数</span>
-                          <div className="flex items-center gap-3">
-                              <span className="text-[10px] font-black text-stone-900">{rolloverSettings.maxDays} 天</span>
-                              <input 
-                                  type="range" 
-                                  min="1" 
-                                  max="7" 
-                                  step="1"
-                                  value={rolloverSettings.maxDays}
-                                  onChange={(e) => onUpdateRolloverSettings({ ...rolloverSettings, maxDays: parseInt(e.target.value) })}
-                                  className="w-20 h-1.5 bg-stone-100 rounded-lg appearance-none cursor-pointer accent-primary"
-                              />
-                          </div>
+                          <button 
+                              onClick={() => {
+                                  const nextDays = (rolloverSettings.maxDays % 7) + 1;
+                                  onUpdateRolloverSettings({ ...rolloverSettings, maxDays: nextDays });
+                              }}
+                              className="px-4 py-1.5 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black text-stone-900 active:scale-95 transition-all shadow-sm"
+                          >
+                              {rolloverSettings.maxDays} 天
+                          </button>
                       </div>
                   </div>
               )}

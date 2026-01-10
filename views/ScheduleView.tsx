@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import { Task, DayData, HOURS } from '../types';
 import { TaskEditorModal } from '../components/TaskEditorModal';
@@ -45,8 +44,10 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   const taskStats = useMemo(() => {
     const stats: Record<string, { actual: number; goal: number }> = {};
     tasks.forEach(t => stats[t.id] = { actual: 0, goal: t.targets?.value || 0 });
+    
+    const hoursData = recordData.hours || {};
     HOURS.forEach(h => {
-        const actual = recordData.hours[h] || [];
+        const actual = hoursData[h] || [];
         actual.forEach(tid => { if(stats[tid]) stats[tid].actual += (1 / (actual.length || 1)); });
     });
     return stats;
@@ -90,7 +91,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
                <button 
                  onClick={() => setShowTaskPool(true)}
                  className="p-1.5 text-stone-400 hover:text-primary transition-colors"
-                 title="打开任务池"
+                 title="打开任务库"
                >
                  <LayoutList size={18} />
                </button>
@@ -103,7 +104,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               key={hour} 
               hour={hour} 
               assignedScheduleIds={dayData.hours[hour] || []} 
-              assignedRecordIds={recordData.hours[hour] || []}
+              assignedRecordIds={(recordData.hours && recordData.hours[hour]) || []}
               allTasks={tasks} 
               onScheduleClick={handleHourClick} 
               onRecordClick={() => {}}
@@ -119,7 +120,7 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
               <button onClick={() => setShowTaskPool(false)} className="p-1 text-stone-400 hover:text-stone-600 transition-colors">
                 <ChevronRight size={16} />
               </button>
-              <h2 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">任务池</h2>
+              <h2 className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">任务库</h2>
             </div>
             <button onClick={() => setIsRepeatMode(!isRepeatMode)} className={cn("px-2 py-0.5 rounded-md border text-[9px] font-bold flex items-center gap-1", isRepeatMode ? "bg-purple-600 text-white border-purple-600" : "bg-white text-stone-500 border-stone-100")}>
                 <Repeat size={10} /> 重复

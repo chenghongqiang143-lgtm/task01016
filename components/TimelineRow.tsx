@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Task } from '../types';
 import { getContrastColor, cn } from '../utils';
@@ -14,7 +13,7 @@ interface TimelineRowProps {
   isRecordSelected?: boolean;
 }
 
-export const TimelineRow: React.FC<TimelineRowProps> = ({
+export const TimelineRow = React.memo<TimelineRowProps>(({
   hour,
   assignedScheduleIds,
   assignedRecordIds,
@@ -52,11 +51,11 @@ export const TimelineRow: React.FC<TimelineRowProps> = ({
           <div
             key={`${task.id}-${idx}`}
             className={cn(
-                "flex-1 h-full rounded-[3px] flex items-center justify-center font-medium truncate leading-none transition-all border border-black/5",
+                "flex-1 h-full rounded-[3px] flex items-center justify-center font-medium truncate leading-none transition-all border border-black/5 shadow-sm",
                 tasks.length > 3 ? "px-0 text-[9px]" : "px-1 text-[10px]"
             )}
             style={{ 
-              backgroundColor: task.color, 
+              background: `linear-gradient(135deg, ${task.color} 0%, ${task.color}CC 100%)`, 
               color: getContrastColor(task.color)
             }}
           >
@@ -68,16 +67,15 @@ export const TimelineRow: React.FC<TimelineRowProps> = ({
   };
 
   return (
-    <div className="flex h-9 border-b border-stone-50 group transition-colors">
+    <div className="flex h-10 border-b border-stone-50 group transition-colors will-change-contents bg-white">
       <div 
         className={cn(
           "flex-1 flex transition-all duration-200 relative overflow-hidden",
-          isScheduleSelected ? "bg-indigo-100 shadow-[inset_0_0_10px_rgba(99,102,241,0.15)]" : "hover:bg-stone-50/50"
+          isScheduleSelected ? "bg-stone-100" : "hover:bg-stone-50/50"
         )}
         onClick={() => onScheduleClick(hour)}
       >
         {renderTasks(scheduleTasks, 'plan')}
-        {scheduleTasks.length > 0 && <div className="absolute right-0 top-0 bottom-0 w-[2px] bg-indigo-200/30" />}
       </div>
 
       <div className={cn(
@@ -92,13 +90,12 @@ export const TimelineRow: React.FC<TimelineRowProps> = ({
       <div 
         className={cn(
           "flex-1 flex transition-all duration-200 relative overflow-hidden",
-          isRecordSelected ? "bg-emerald-100 shadow-[inset_0_0_10px_rgba(16,185,129,0.15)]" : "hover:bg-stone-50/50"
+          isRecordSelected ? "bg-stone-100" : "hover:bg-stone-50/50"
         )}
         onClick={() => onRecordClick(hour)}
       >
         {renderTasks(recordTasks, 'actual')}
-        {recordTasks.length > 0 && <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-emerald-200/30" />}
       </div>
     </div>
   );
-};
+});

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Todo, Objective, SubTask, TargetMode } from '../types';
 import { X, Save, Plus, Trash2, CheckSquare, ListTodo, Calendar, Clock, Hash, LayoutList, Star, AlertCircle, Flag, Hourglass, History } from 'lucide-react';
@@ -36,17 +35,14 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  // Target & Frequency State
   const [targetMode, setTargetMode] = useState<TargetMode>('duration');
   const [targetValue, setTargetValue] = useState('');
   const [targetFrequency, setTargetFrequency] = useState('1');
   
-  // Long Term Goals
   const [totalValue, setTotalValue] = useState('');
   const [deadline, setDeadline] = useState('');
   const [actualStartDate, setActualStartDate] = useState('');
 
-  // Initial load effect
   useEffect(() => {
     if (isOpen) {
       if (todo) {
@@ -58,10 +54,11 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setSubTasks(todo.subTasks || []);
         setShowDeleteConfirm(false);
         if (todo.targets) {
-            setTargetValue(todo.targets.value ? todo.targets.value.toString() : '');
-            setTargetFrequency(todo.targets.frequency.toString());
+            // Fix: Added safety check for toString calls
+            setTargetValue(todo.targets.value !== undefined ? todo.targets.value.toString() : '');
+            setTargetFrequency(todo.targets.frequency !== undefined ? todo.targets.frequency.toString() : '1');
             setTargetMode(todo.targets.mode || 'duration');
-            setTotalValue(todo.targets.totalValue ? todo.targets.totalValue.toString() : '');
+            setTotalValue(todo.targets.totalValue !== undefined ? todo.targets.totalValue.toString() : '');
             setDeadline(todo.targets.deadline || '');
         } else {
             setTargetValue(''); setTargetFrequency('1'); setTargetMode('duration');
@@ -80,7 +77,6 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         setShowDeleteConfirm(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, todo?.id]); 
 
   if (!isOpen) return null;
@@ -129,7 +125,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
       startDate: startDate || undefined,
       actualStartDate: actualStartDate || undefined,
       createdAt: todo ? todo.createdAt : new Date().toISOString(),
-      targets // Add targets
+      targets
     });
     onClose();
   };
@@ -147,10 +143,9 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
-          {/* 标题 */}
           <div className="space-y-2">
             <div className="flex justify-between items-center pr-1">
-                <label className="text-xs font-bold text-stone-500 ml-1">任务名称</label>
+                <label className="text-xs font-bold text-stone-50 ml-1 opacity-0">任务名称</label>
                 <button
                     type="button"
                     onClick={() => setIsFrog(!isFrog)}
@@ -169,13 +164,12 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-stone-800 transition-all font-bold text-sm text-stone-900"
+              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-primary transition-all font-bold text-sm text-stone-900"
               placeholder="你想完成什么？"
               autoFocus
             />
           </div>
 
-          {/* 目标分类选择 */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-stone-500 ml-1">所属分类</label>
             <div className="flex flex-wrap gap-2">
@@ -186,7 +180,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                 className={cn(
                   "px-4 py-2 rounded-lg border text-[11px] font-bold transition-all",
                   objectiveId === 'none' 
-                    ? "bg-stone-900 text-white border-stone-900 shadow-sm" 
+                    ? "bg-primary text-white border-primary shadow-sm" 
                     : "bg-white border-stone-100 text-stone-400 hover:border-stone-200"
                 )}
               >
@@ -200,10 +194,10 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   className={cn(
                     "px-4 py-2 rounded-lg border text-[11px] font-bold transition-all flex items-center gap-2",
                     objectiveId === obj.id 
-                      ? "bg-white border-transparent shadow-md ring-1 ring-stone-100" 
+                      ? "bg-white border-primary text-primary shadow-md ring-1 ring-primary" 
                       : "bg-white border-stone-100 text-stone-400 hover:border-stone-200"
                   )}
-                  style={objectiveId === obj.id ? { color: obj.color, borderColor: obj.color } : {}}
+                  style={objectiveId === obj.id ? { borderColor: 'rgb(var(--color-primary))' } : {}}
                 >
                   <div className={cn("w-2 h-2 rounded-full", objectiveId === obj.id ? "" : "bg-stone-300")} style={{ backgroundColor: objectiveId === obj.id ? obj.color : undefined }} />
                   {obj.title}
@@ -212,7 +206,6 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
             </div>
           </div>
 
-          {/* 日期 - 直接显示 */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-stone-500 ml-1 flex items-center gap-1">
               <Calendar size={12} /> 日期
@@ -221,31 +214,29 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-stone-800 transition-all font-bold text-sm text-stone-800"
+              className="w-full px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none focus:border-primary transition-all font-bold text-sm text-stone-800"
             />
           </div>
 
-          {/* 量化目标 */}
           <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100 space-y-3">
               <div className="flex items-center justify-between">
                   <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">单次目标</span>
                   <div className="flex bg-white rounded-lg p-0.5 border border-stone-100">
-                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'duration' ? "bg-stone-900 text-white" : "text-stone-400")}>时长</button>
-                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'count' ? "bg-stone-900 text-white" : "text-stone-400")}>次数</button>
+                      <button type="button" onClick={() => setTargetMode('duration')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'duration' ? "bg-primary text-white" : "text-stone-400")}>时长</button>
+                      <button type="button" onClick={() => setTargetMode('count')} className={cn("px-3 py-1 rounded-md text-[10px] font-bold transition-all", targetMode === 'count' ? "bg-primary text-white" : "text-stone-400")}>次数</button>
                   </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                       <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">{targetMode === 'duration' ? <Clock size={10} /> : <Hash size={10} />} {targetMode === 'duration' ? '每次(h)' : '次数'}</label>
-                      <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="0" />
+                      <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={targetValue} onChange={(e) => setTargetValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-primary" placeholder="0" />
                   </div>
                   <div className="space-y-1">
                       <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1"><LayoutList size={10} /> 周期(天)</label>
-                      <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="1" />
+                      <input type="number" value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-primary" placeholder="1" />
                   </div>
               </div>
 
-               {/* Long Term Goal Section */}
                <div className="pt-3 border-t border-stone-200 mt-2 space-y-3">
                   <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">长期目标</span>
@@ -255,25 +246,18 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                           <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
                               <Flag size={10} /> 总量
                           </label>
-                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300" placeholder="无" />
+                          <input type="number" step={targetMode === 'duration' ? "0.5" : "1"} value={totalValue} onChange={(e) => setTotalValue(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-primary" placeholder="无" />
                       </div>
                       <div className="space-y-1">
                           <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
                              <Hourglass size={10} /> 截止日期
                           </label>
-                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300 min-h-[34px]" />
-                      </div>
-                      <div className="col-span-2 space-y-1">
-                          <label className="text-[9px] font-bold text-stone-400 flex items-center gap-1 ml-1">
-                             <History size={10} /> 项目起始日
-                          </label>
-                          <input type="date" value={actualStartDate} onChange={(e) => setActualStartDate(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-stone-300 min-h-[34px]" />
+                          <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} className="w-full px-3 py-2 bg-white border border-stone-100 rounded-xl text-xs font-bold text-stone-700 focus:outline-none focus:border-primary min-h-[34px]" />
                       </div>
                   </div>
               </div>
           </div>
 
-          {/* 子任务 */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-stone-500 ml-1 flex items-center gap-2">
                <ListTodo size={12} /> 任务拆解
@@ -284,7 +268,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   <button 
                     type="button" 
                     onClick={() => handleToggleSubTask(st.id)}
-                    className={cn("p-1 rounded-lg transition-colors", st.isCompleted ? "text-white bg-stone-800" : "text-stone-300 bg-white border border-stone-100")}
+                    className={cn("p-1 rounded-lg transition-colors", st.isCompleted ? "text-white bg-primary" : "text-stone-300 bg-white border border-stone-100")}
                   >
                     <CheckSquare size={16} />
                   </button>
@@ -306,13 +290,13 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   value={newSubTaskTitle}
                   onChange={(e) => setNewSubTaskTitle(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSubTask())}
-                  className="flex-1 px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none text-xs font-bold focus:border-stone-300 transition-all"
+                  className="flex-1 px-4 py-3 bg-white border-2 border-stone-100 rounded-xl focus:outline-none text-xs font-bold focus:border-primary transition-all"
                   placeholder="添加步骤..."
                 />
                 <button 
                   type="button" 
                   onClick={handleAddSubTask}
-                  className="w-10 flex items-center justify-center bg-stone-100 text-stone-500 rounded-xl hover:bg-stone-200 transition-colors"
+                  className="w-10 flex items-center justify-center bg-stone-100 text-stone-500 rounded-xl hover:bg-primary hover:text-white transition-colors"
                 >
                   <Plus size={18} />
                 </button>
@@ -360,7 +344,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
                   <button 
                     type="button" 
                     onClick={handleSubmit}
-                    className="flex-1 py-3.5 rounded-xl bg-stone-900 text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
+                    className="flex-1 py-3.5 rounded-xl bg-primary text-white font-black text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
                   >
                     <Save size={16} /> 保存任务
                   </button>
