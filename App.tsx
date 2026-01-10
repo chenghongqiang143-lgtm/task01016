@@ -395,6 +395,7 @@ export function App() {
                     recordData={currentRecord}
                     recurringSchedule={state.recurringSchedule}
                     allRecords={state.records || {}}
+                    todos={state.todos}
                     onUpdateRecord={updateRecordHour}
                     onUpdateSchedule={updateScheduleHour}
                     onUpdateRecurring={updateRecurring}
@@ -512,6 +513,7 @@ export function App() {
             tasks={state.tasks} 
             objectives={state.objectives} 
             categoryOrder={state.categoryOrder}
+            todos={state.todos}
             onAddTask={handleAddTask} 
             onUpdateTask={handleUpdateTask} 
             onDeleteTask={handleDeleteTask} 

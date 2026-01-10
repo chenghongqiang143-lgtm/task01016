@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { Task, Objective } from '../types';
-import { X, Plus, Edit2, Layers, CheckCircle } from 'lucide-react';
-import { cn } from '../utils';
+
+import React, { useState, useRef, useMemo } from 'react';
+import { Task, Objective, Todo } from '../types';
+import { X, Plus, Edit2, Layers, CheckCircle, History } from 'lucide-react';
+import { cn, generateId } from '../utils';
 import { useModalBackHandler } from '../hooks';
 import { TaskEditorModal } from './TaskEditorModal';
 import { ObjectiveEditorModal } from './ObjectiveEditorModal';
+import { differenceInCalendarDays, parseISO, isValid } from 'date-fns';
 
 interface TaskPoolModalProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface TaskPoolModalProps {
   tasks: Task[];
   objectives: Objective[];
   categoryOrder: string[];
+  todos: Todo[];
   onAddTask: (task: Omit<Task, 'id'>) => void;
   onUpdateTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
@@ -28,6 +31,7 @@ export const TaskPoolModal: React.FC<TaskPoolModalProps> = ({
   tasks,
   objectives,
   categoryOrder,
+  todos,
   onAddTask,
   onUpdateTask,
   onDeleteTask,
@@ -48,6 +52,33 @@ export const TaskPoolModal: React.FC<TaskPoolModalProps> = ({
   // Ref for long press detection
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const taskLastAdded = useMemo(() => {
+    const lastDates: Record<string, string> = {};
+    todos.forEach(todo => {
+      if (todo.templateId) {
+        const date = todo.startDate;
+        if (date && (!lastDates[todo.templateId] || date > lastDates[todo.templateId])) {
+          lastDates[todo.templateId] = date;
+        }
+      }
+    });
+    return lastDates;
+  }, [todos]);
+
+  const getStatusText = (taskId: string) => {
+    const lastDateStr = taskLastAdded[taskId];
+    if (!lastDateStr) return '未开始';
+    try {
+      const date = parseISO(lastDateStr);
+      if (!isValid(date)) return '未开始';
+      const diff = differenceInCalendarDays(new Date(), date);
+      if (diff === 0) return '今天添加过';
+      return `${diff}天前添加`;
+    } catch (e) {
+      return '未开始';
+    }
+  };
+
   if (!isOpen) return null;
 
   const sortedObjectives = [...objectives].sort((a, b) => {
@@ -55,12 +86,6 @@ export const TaskPoolModal: React.FC<TaskPoolModalProps> = ({
         const idxB = categoryOrder.indexOf(b.id);
         return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
   });
-
-  const getObjectiveTitle = (id: string) => {
-    if (id === 'all') return '全部';
-    if (id === 'none') return '未分类';
-    return objectives.find(o => o.id === id)?.title || '未分类';
-  };
 
   const visibleTasks = tasks.filter(t => {
       if (activeCategory === 'all') return true;
@@ -159,25 +184,29 @@ export const TaskPoolModal: React.FC<TaskPoolModalProps> = ({
 
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-stone-50/30">
             <div className="grid grid-cols-2 gap-2.5">
-                {visibleTasks.map(task => (
-                    <div 
-                        key={task.id}
-                        onPointerDown={() => handleTaskPointerDown(task)}
-                        onPointerUp={() => handleTaskPointerUp(task)}
-                        onPointerLeave={handleTaskPointerLeave}
-                        className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm flex items-center gap-3 active:scale-95 transition-transform cursor-pointer select-none group relative overflow-hidden"
-                    >
-                        <div className="w-1.5 h-full absolute left-0 top-0 bottom-0" style={{ backgroundColor: task.color }} />
-                        <div className="flex-1 min-w-0 pl-1">
-                            <h4 className="font-black text-stone-800 text-xs truncate">{task.name}</h4>
-                            <p className="text-[9px] text-stone-400 truncate mt-0.5">
-                                {task.targets?.value ? `目标: ${task.targets.value}${task.targets.mode === 'duration' ? 'h' : '次'}` : '无量化目标'}
-                            </p>
+                {visibleTasks.map(task => {
+                    const status = getStatusText(task.id);
+                    return (
+                        <div 
+                            key={task.id}
+                            onPointerDown={() => handleTaskPointerDown(task)}
+                            onPointerUp={() => handleTaskPointerUp(task)}
+                            onPointerLeave={handleTaskPointerLeave}
+                            className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm flex items-center gap-3 active:scale-95 transition-transform cursor-pointer select-none group relative overflow-hidden"
+                        >
+                            <div className="w-1.5 h-full absolute left-0 top-0 bottom-0" style={{ backgroundColor: task.color }} />
+                            <div className="flex-1 min-w-0 pl-1">
+                                <h4 className="font-black text-stone-800 text-xs truncate">{task.name}</h4>
+                                <div className="flex items-center gap-1.5 mt-1 text-stone-400">
+                                    <History size={10} />
+                                    <span className="text-[9px] font-bold">{status}</span>
+                                </div>
+                            </div>
+                            {/* Hint for long press */}
+                            <Edit2 size={10} className="text-stone-200 opacity-0 group-hover:opacity-100 absolute right-2 top-2" />
                         </div>
-                        {/* Hint for long press */}
-                        <Edit2 size={10} className="text-stone-200 opacity-0 group-hover:opacity-100 absolute right-2 top-2" />
-                    </div>
-                ))}
+                    );
+                })}
                 
                 <button 
                     onClick={() => { 

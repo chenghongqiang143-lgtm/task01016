@@ -3,8 +3,8 @@ import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
 import { TaskEditorModal } from '../components/TaskEditorModal';
 import { cn, formatDate, generateId } from '../utils';
-import { LayoutGrid, X, ChevronLeft, ChevronRight, Repeat, Clock, Columns } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { LayoutGrid, X, ChevronLeft, ChevronRight, Repeat, Clock, Columns, History, Layers } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO, isValid, differenceInCalendarDays } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 interface TrackerViewProps {
@@ -15,6 +15,7 @@ interface TrackerViewProps {
   recordData: DayData;
   recurringSchedule: Record<number, string[]>;
   allRecords: Record<string, DayData>;
+  todos: Todo[];
   onUpdateRecord: (hour: number, taskIds: string[]) => void;
   onUpdateSchedule: (hour: number, taskIds: string[]) => void;
   onUpdateRecurring: (hour: number, taskIds: string[]) => void;
@@ -35,6 +36,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   recordData,
   recurringSchedule,
   allRecords,
+  todos,
   onUpdateRecord,
   onUpdateSchedule,
   onUpdateRecurring,
@@ -58,6 +60,33 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     if (scrollRef.current) scrollRef.current.scrollTop = 180;
   }, []);
 
+  const taskLastAdded = useMemo(() => {
+    const lastDates: Record<string, string> = {};
+    todos.forEach(todo => {
+      if (todo.templateId) {
+        const date = todo.startDate;
+        if (date && (!lastDates[todo.templateId] || date > lastDates[todo.templateId])) {
+          lastDates[todo.templateId] = date;
+        }
+      }
+    });
+    return lastDates;
+  }, [todos]);
+
+  const getStatusText = (taskId: string) => {
+    const lastDateStr = taskLastAdded[taskId];
+    if (!lastDateStr) return '未开始';
+    try {
+      const date = parseISO(lastDateStr);
+      if (!isValid(date)) return '未开始';
+      const diff = differenceInCalendarDays(new Date(), date);
+      if (diff === 0) return '今天添加过';
+      return `${diff}天前添加`;
+    } catch (e) {
+      return '未开始';
+    }
+  };
+
   useEffect(() => {
     if (onEditingStatusChange) {
       if (activeSide && selectedHours.size > 0) {
@@ -75,10 +104,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   const taskProgress = useMemo(() => {
     const stats: Record<string, number> = {};
     tasks.forEach(t => stats[t.id] = 0);
-    
-    // Safety check for recordData
     const hoursData = recordData.hours || {};
-
     HOURS.forEach(h => {
       const ids = hoursData[h] || [];
       ids.forEach(tid => {
@@ -132,9 +158,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     const isRecurring = activeSide === 'plan' && isRecurringMode;
     const targetDataMap = activeSide === 'actual' ? recordData.hours : (isRecurring ? recurringSchedule : scheduleData.hours);
     const updateFn = activeSide === 'actual' ? onUpdateRecord : (isRecurring ? onUpdateRecurring : onUpdateSchedule);
-
     const allHaveIt = Array.from(selectedHours).every((h: number) => (targetDataMap[h] || []).includes(taskId));
-
     selectedHours.forEach(hour => {
         const currentTasks = targetDataMap[hour] || [];
         let newTasks;
@@ -175,7 +199,46 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
       setActiveSide(null);
   };
 
-  // --- Render Components ---
+  const renderTaskButton = (task: Task) => {
+    const isSelected = isTaskInActiveSlot(task.id);
+    const currentVal = taskProgress[task.id] || 0;
+    const target = task.targets;
+    const dailyTarget = target ? (target.value / target.frequency) : 0;
+    const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
+    const statusText = getStatusText(task.id);
+
+    return (
+        <div 
+            key={task.id}
+            onClick={() => handleToggleTaskInSlot(task.id)}
+            onPointerDown={() => handleTaskPointerDown(task)}
+            onPointerUp={handleTaskPointerUp}
+            onPointerLeave={handleTaskPointerUp}
+            className={cn(
+                "px-3 py-2 rounded-xl border transition-all cursor-pointer relative shadow-sm flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[44px]",
+                isSelected 
+                    ? "text-white z-10" 
+                    : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
+            )}
+            style={isSelected ? { background: `linear-gradient(135deg, ${task.color}, ${task.color}AA)` } : {}}
+        >
+            {!isSelected && (
+                <div 
+                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-10"
+                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${task.color}, transparent)` }}
+                />
+            )}
+            <div className="relative z-10 flex items-center gap-2 w-full min-w-0">
+                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isSelected ? 'white' : task.color }} />
+                <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
+            </div>
+            <div className={cn("relative z-10 flex items-center gap-1 mt-1 text-[8px] font-bold", isSelected ? "text-white/60" : "text-stone-300")}>
+                <History size={8} />
+                <span>{statusText}</span>
+            </div>
+        </div>
+    );
+  };
 
   const PoolContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -195,12 +258,10 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             </div>
         </div>
         
-        {/* 记录页任务库分类顶栏：不换行滚动 */}
         <div className="px-3 py-2 bg-white border-b border-stone-50 shrink-0">
             <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {sortedCategories.map(catId => {
                     const isActive = activePoolCategory === catId;
-                    const obj = objectives.find(o => o.id === catId);
                     return (
                         <button 
                             key={catId} 
@@ -218,44 +279,42 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-6 custom-scrollbar pb-32">
-            <div className="grid grid-cols-2 gap-2">
-                {tasks.filter(t => activePoolCategory === 'all' || (t.category || '未分类') === activePoolCategory).map(task => {
-                    const isSelected = isTaskInActiveSlot(task.id);
-                    const currentVal = taskProgress[task.id] || 0;
-                    const target = task.targets;
-                    const dailyTarget = target ? (target.value / target.frequency) : 0;
-                    const progress = dailyTarget > 0 ? Math.min((currentVal / dailyTarget) * 100, 100) : 0;
-
-                    return (
-                        <div 
-                            key={task.id}
-                            onClick={() => handleToggleTaskInSlot(task.id)}
-                            onPointerDown={() => handleTaskPointerDown(task)}
-                            onPointerUp={handleTaskPointerUp}
-                            onPointerLeave={handleTaskPointerUp}
-                            className={cn(
-                                "px-3 h-10 rounded-xl border transition-all cursor-pointer relative shadow-sm flex items-center overflow-hidden active:scale-95 select-none touch-manipulation",
-                                isSelected 
-                                    ? "text-white z-10" 
-                                    : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
-                            )}
-                            style={isSelected ? { background: `linear-gradient(135deg, ${task.color}, ${task.color}AA)` } : {}}
-                        >
-                            {!isSelected && (
-                                <div 
-                                    className="absolute left-0 top-0 bottom-0 pointer-events-none transition-all duration-700 ease-out z-0 opacity-10"
-                                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${task.color}, transparent)` }}
-                                />
-                            )}
-
-                            <div className="relative z-10 flex items-center gap-2 w-full min-w-0">
-                                <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isSelected ? 'white' : task.color }} />
-                                <span className="text-[10px] font-bold leading-none truncate flex-1 font-sans">{task.name}</span>
+            {activePoolCategory === 'all' ? (
+                <div className="space-y-6">
+                    {categoryOrder.map(catId => {
+                        const obj = objectives.find(o => o.id === catId);
+                        const catTasks = tasks.filter(t => t.category === catId);
+                        if (catTasks.length === 0) return null;
+                        return (
+                            <div key={catId} className="space-y-3">
+                                <div className="flex items-center gap-2 px-1">
+                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: obj?.color || '#ccc' }} />
+                                    <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{obj?.title}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {catTasks.map(task => renderTaskButton(task))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {/* Others/Uncategorized */}
+                    {tasks.filter(t => !t.category || !categoryOrder.includes(t.category)).length > 0 && (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 px-1">
+                                <Layers size={10} className="text-stone-300" />
+                                <span className="text-[9px] font-black text-stone-300 uppercase tracking-widest">其他</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {tasks.filter(t => !t.category || !categoryOrder.includes(t.category)).map(task => renderTaskButton(task))}
                             </div>
                         </div>
-                    );
-                })}
-            </div>
+                    )}
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-2">
+                    {tasks.filter(t => (t.category || '未分类') === activePoolCategory || (activePoolCategory === 'none' && (!t.category || t.category === 'none'))).map(task => renderTaskButton(task))}
+                </div>
+            )}
         </div>
     </div>
   );
@@ -275,7 +334,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                          const isSelected = isSameDay(day, currentDate);
                          return (
                              <div key={day.toString()} className={cn("flex-1 flex flex-col items-center justify-center py-2 border-r border-stone-50/50", isSelected ? "bg-stone-50/50" : "")}>
-                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-primary" : "text-stone-400")}>{format(day, 'EEE', { locale: zhCN })}</span>
+                                 <span className={cn("text-[9px] font-black uppercase", isToday ? "text-primary" : "text-stone-400")}>{format(day, 'EEE', { locale: zhCN }).replace('周', '')}</span>
                                  <span className={cn("text-xs font-black leading-none mt-0.5", isToday ? "text-primary" : "text-stone-600")}>{format(day, 'd')}</span>
                              </div>
                          );

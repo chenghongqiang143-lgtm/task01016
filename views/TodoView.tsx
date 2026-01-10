@@ -1,9 +1,10 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Todo, Objective, Task, ViewMode, HOURS, DayData } from '../types';
 import { TodoEditorModal } from '../components/TodoEditorModal';
-import { cn, formatDate } from '../utils';
-import { Plus, Star, List, Check, Timer, Flag, Lock, ListTodo, CornerDownRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { cn, formatDate, generateId } from '../utils';
+import { Plus, Star, List, Check, Timer, Flag, Lock, ListTodo, CornerDownRight, Package, History } from 'lucide-react';
+import { format, differenceInCalendarDays, parseISO, isValid } from 'date-fns';
 
 type FilterRange = 'today' | 'expired' | 'no-date' | 'recurring' | 'one-time' | 'all';
 
@@ -59,6 +60,33 @@ export const TodoView: React.FC<TodoViewProps> = ({
   const [activeFilter, setActiveFilter] = useState<FilterRange>('today');
   
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const taskLastAdded = useMemo(() => {
+    const lastDates: Record<string, string> = {};
+    todos.forEach(todo => {
+      if (todo.templateId) {
+        const date = todo.startDate;
+        if (date && (!lastDates[todo.templateId] || date > lastDates[todo.templateId])) {
+          lastDates[todo.templateId] = date;
+        }
+      }
+    });
+    return lastDates;
+  }, [todos]);
+
+  const getStatusText = (taskId: string) => {
+    const lastDateStr = taskLastAdded[taskId];
+    if (!lastDateStr) return '未开始';
+    try {
+      const date = parseISO(lastDateStr);
+      if (!isValid(date)) return '未开始';
+      const diff = differenceInCalendarDays(new Date(), date);
+      if (diff === 0) return '今天添加过';
+      return `${diff}天前添加`;
+    } catch (e) {
+      return '未开始';
+    }
+  };
   
   useEffect(() => {
     if (viewMode !== localViewMode) setLocalViewMode(viewMode);
@@ -79,13 +107,10 @@ export const TodoView: React.FC<TodoViewProps> = ({
     return objectives.find(o => o.id === id)?.title || '未知分类';
   };
 
-  // Improved Progress Calculation Logic
   const taskStats = useMemo(() => {
     const stats: Record<string, { actual: number; goal: number; mode: string; totalActual: number; totalGoal?: number }> = {};
-    // Map to store recorded duration: Key = `${taskId}_${dateString}`, Value = hours
     const recordedValues = new Map<string, number>(); 
 
-    // 1. Initialize stats from task definitions
     tasks.forEach(t => {
         const hasTotal = t.targets?.totalValue && t.targets.totalValue > 0;
         stats[t.id] = { 
@@ -97,7 +122,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
         };
     });
     
-    // 2. Accumulate historical data from Records (Time Tracking)
     if (allRecords) {
          Object.entries(allRecords).forEach(([dateStr, record]) => {
              const dayData = record as DayData;
@@ -110,10 +134,7 @@ export const TodoView: React.FC<TodoViewProps> = ({
                     ids.forEach(tid => { 
                         if (tid && stats[tid]) {
                             const increment = 1 / Math.max(ids.length, 1);
-                            // Add to global total
                             stats[tid].totalActual += increment;
-                            
-                            // Track daily total for specific task
                             const key = `${tid}_${dateStr}`;
                             recordedValues.set(key, (recordedValues.get(key) || 0) + increment);
                         }
@@ -123,24 +144,16 @@ export const TodoView: React.FC<TodoViewProps> = ({
         });
     }
 
-    // 3. Accumulate completed Todos (Checklist items)
-    // Ensures that if a task is "Completed", the total progress reflects at least the target value
     todos.forEach(t => {
         if (t.isCompleted && t.templateId && stats[t.templateId]) {
             const mode = stats[t.templateId].mode;
-            // Use completedAt or startDate as the reference date
             const refDate = t.completedAt || t.startDate; 
-            
             if (mode === 'count') {
                 stats[t.templateId].totalActual += 1;
             } else if (mode === 'duration' && refDate) {
-                // Check how much was recorded for this task on that day
                 const key = `${t.templateId}_${refDate}`;
                 const recorded = recordedValues.get(key) || 0;
                 const targetVal = t.targets?.value || 0;
-
-                // If recorded time is less than the target, add the difference
-                // This implies "Checking the box means I finished the task", compensating for any unrecorded time
                 if (targetVal > recorded) {
                     const diff = targetVal - recorded;
                     stats[t.templateId].totalActual += diff;
@@ -149,7 +162,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
         }
     });
 
-    // 4. Current Day's Records (Real-time updates)
     const recordHours = recordData?.hours;
     if (recordHours) {
         HOURS.forEach(h => {
@@ -165,7 +177,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
         });
     }
 
-    // 5. Current Day's Todo Completion (Visual feedback for today's specific item)
     const dateStr = formatDate(currentDate);
     todos.forEach(t => {
         if (t.startDate === dateStr && t.isCompleted && t.templateId && stats[t.templateId]) {
@@ -190,7 +201,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
     const isFuture = selectedDateStr > realTodayStr;
     const isSameDate = selectedDateStr === realTodayStr;
 
-    // 1. 获取基础列表（根据筛选器）
     const baseTodos = todos.filter(t => {
       if (localViewMode !== 'list') return t.startDate === selectedDateStr;
       if (activeFilter === 'all') return true;
@@ -204,7 +214,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
     
     result = [...baseTodos];
 
-    // 2. 注入未来日期的虚拟循环任务
     if (localViewMode === 'list' && (isFuture || isSameDate)) {
         tasks.filter(t => t.targets && t.targets.value > 0).forEach(task => {
             const isScheduledOnSelectedDate = todos.some(t => 
@@ -308,6 +317,22 @@ export const TodoView: React.FC<TodoViewProps> = ({
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
       }
+  };
+
+  const handleTaskSelect = (task: Task) => {
+    const newTodo: Todo = {
+        id: generateId(),
+        title: task.name,
+        objectiveId: task.category || 'none',
+        templateId: task.id,
+        isFrog: false,
+        isCompleted: false,
+        subTasks: [],
+        createdAt: new Date().toISOString(),
+        startDate: formatDate(currentDate),
+        targets: task.targets
+    };
+    onAddTodo(newTodo);
   };
 
   const ListView = () => (
@@ -428,7 +453,6 @@ export const TodoView: React.FC<TodoViewProps> = ({
                                             )}
                                         </div>
 
-                                        {/* Subtasks Section */}
                                         {!isVirtual && t.subTasks && t.subTasks.length > 0 && (
                                             <div className="mt-1 pl-10 pr-2 space-y-1.5 relative z-10">
                                                 {t.subTasks.map(st => (
@@ -467,30 +491,75 @@ export const TodoView: React.FC<TodoViewProps> = ({
   );
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
-        {localViewMode === 'list' && (
-            <div className="bg-white px-6 pt-4 pb-3 border-b border-stone-100 shrink-0 z-10 flex justify-center">
-                <div className="inline-flex bg-stone-50 p-1.5 rounded-2xl border border-stone-100 overflow-x-auto no-scrollbar max-w-full">
-                    <div className="flex flex-nowrap gap-1.5">
-                        {filterOrder.map((range) => (
-                            <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-5 py-2.5 rounded-xl text-[10px] font-black transition-all uppercase shrink-0", activeFilter === range ? "bg-primary text-white shadow-lg" : "text-stone-400 hover:bg-white/80")}>
-                                {filterLabels[range]}
-                            </button>
-                        ))}
+    <div className="h-full flex flex-col md:flex-row bg-white overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0">
+            {localViewMode === 'list' && (
+                <div className="bg-white px-6 pt-4 pb-3 border-b border-stone-100 shrink-0 z-10 flex justify-center">
+                    <div className="inline-flex bg-stone-50 p-1.5 rounded-2xl border border-stone-100 overflow-x-auto no-scrollbar max-w-full">
+                        <div className="flex flex-nowrap gap-1.5">
+                            {filterOrder.map((range) => (
+                                <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-5 py-2.5 rounded-xl text-[10px] font-black transition-all uppercase shrink-0", activeFilter === range ? "bg-primary text-white shadow-lg" : "text-stone-400 hover:bg-white/80")}>
+                                    {filterLabels[range]}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
-            {localViewMode === 'list' && <ListView />}
-            {localViewMode === 'list' && filteredTodos.length === 0 && (
-                <div className="py-24 flex flex-col items-center justify-center border-2 border-dashed border-stone-100 rounded-3xl bg-stone-50/30">
-                    <ListTodo size={32} className="text-stone-200 mb-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">暂无任务安排</span>
-                </div>
             )}
+
+            <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
+                {localViewMode === 'list' && <ListView />}
+                {localViewMode === 'list' && filteredTodos.length === 0 && (
+                    <div className="py-24 flex flex-col items-center justify-center border-2 border-dashed border-stone-100 rounded-3xl bg-stone-50/30">
+                        <ListTodo size={32} className="text-stone-200 mb-4" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">暂无任务安排</span>
+                    </div>
+                )}
+            </div>
         </div>
+
+        {/* Side Task Pool (Desktop) */}
+        <aside className="hidden md:flex flex-col w-[300px] border-l border-stone-100 bg-white shrink-0 overflow-hidden">
+            <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
+                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest flex items-center gap-2">
+                    <Package size={12} /> 任务库
+                </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                {categoryOrder.map(catId => {
+                    const obj = objectives.find(o => o.id === catId);
+                    const catTasks = tasks.filter(t => t.category === catId);
+                    if (catTasks.length === 0) return null;
+
+                    return (
+                        <div key={catId} className="space-y-3">
+                            <div className="flex items-center gap-2 px-1">
+                                <div className="w-1 h-3 rounded-full" style={{ backgroundColor: obj?.color }} />
+                                <span className="text-[9px] font-black text-stone-400 uppercase tracking-tighter">{obj?.title}</span>
+                            </div>
+                            <div className="space-y-2">
+                                {catTasks.map(task => {
+                                    const status = getStatusText(task.id);
+                                    return (
+                                        <button 
+                                            key={task.id}
+                                            onClick={() => handleTaskSelect(task)}
+                                            className="w-full text-left p-3 bg-stone-50/50 rounded-xl border border-stone-100 hover:border-primary/30 transition-all group active:scale-[0.98] shadow-sm"
+                                        >
+                                            <div className="font-bold text-xs text-stone-700 group-hover:text-primary transition-colors">{task.name}</div>
+                                            <div className="flex items-center gap-1.5 mt-1 text-stone-400">
+                                                <History size={10} />
+                                                <span className="text-[9px] font-bold">{status}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </aside>
 
         <TodoEditorModal isOpen={isTodoModalOpen} onClose={() => setIsTodoModalOpen(false)} todo={editingTodo} objectives={objectives} onSave={onUpdateTodo} onDelete={onDeleteTodo} frogCount={todos.filter(t => t.isFrog).length} defaultDate={currentDate} />
     </div>
