@@ -172,8 +172,11 @@ export function App() {
         let updatedTasks = prev.tasks;
         let processedTodo = { ...todo };
 
-        // Automatically create a habit (task template) if the new todo has a long-term goal but no template
-        if (processedTodo.targets?.totalValue && processedTodo.targets.totalValue > 0 && !processedTodo.templateId) {
+        // Automatically create a habit (task template) if the new todo has a frequency (recurring) or a long-term goal but no template
+        const hasFrequency = processedTodo.targets?.frequency && processedTodo.targets.frequency > 0;
+        const hasLongTermGoal = processedTodo.targets?.totalValue && processedTodo.targets.totalValue > 0;
+
+        if ((hasFrequency || hasLongTermGoal) && !processedTodo.templateId) {
             const templateId = generateId();
             const relatedObj = prev.objectives.find(o => o.id === processedTodo.objectiveId);
             const newTask: Task = {
