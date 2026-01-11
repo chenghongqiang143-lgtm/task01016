@@ -330,29 +330,29 @@ export function App() {
         <div className="flex-1 flex flex-col h-full min-w-0 relative bg-white">
             {/* Conditional Header based on activeTab */}
             {activeTab === 'arrange' ? (
-                <header className="bg-white z-[60] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 flex items-center justify-between px-4 border-b border-stone-50">
-                    <div className="flex justify-start w-12">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
+                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 grid grid-cols-[60px_1fr_60px] items-center px-2 border-b border-stone-50">
+                    <div className="flex justify-start">
+                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                             <Menu size={24} />
                         </button>
                     </div>
                     
-                    {/* Centered Date Navigation */}
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90">
+                    {/* Centered Date Navigation - Using Grid Column and Flex Center */}
+                    <div className="flex justify-center items-center gap-1 sm:gap-2 relative">
+                        <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 z-20">
                             <ChevronLeft size={18} />
                         </button>
-                        <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="relative flex flex-col items-center justify-center min-w-[80px] cursor-pointer group py-1">
+                        <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="relative flex flex-col items-center justify-center min-w-[80px] cursor-pointer group py-1 px-1 z-10">
                             <span className="font-black text-sm text-stone-900 leading-none">{format(currentDate, 'MM.dd')}</span>
                             <span className="text-[9px] font-bold text-stone-400 mt-0.5">{format(currentDate, 'EEEE', { locale: zhCN })}</span>
                             <input ref={dateInputRef} type="date" className="absolute inset-0 opacity-0 cursor-pointer" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
                         </button>
-                        <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="w-8 h-8 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90">
+                        <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 z-20">
                             <ChevronRight size={18} />
                         </button>
                     </div>
                     
-                    <div className="flex justify-end w-12 items-center">
+                    <div className="flex justify-end items-center">
                         {!isToday && (
                             <button onClick={() => setCurrentDate(new Date())} className="p-2 text-stone-900 bg-stone-50 rounded-lg border border-stone-100 shadow-sm hover:bg-stone-100 active:scale-95 transition-all" title="回到今天">
                                 <RotateCcw size={14} />
@@ -362,7 +362,7 @@ export function App() {
                 </header>
             ) : activeTab === 'record' || activeTab === 'calendar' || activeTab === 'rating' || activeTab === 'settings' ? (
                 // Simple Header for other tabs mostly handled internally or just sidebar toggle
-                <header className="bg-white z-[60] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 flex items-center px-4 border-b border-stone-50 md:hidden">
+                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 flex items-center px-4 border-b border-stone-50 md:hidden">
                      <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                         <Menu size={24} />
                     </button>
@@ -479,7 +479,7 @@ export function App() {
         </div>
 
         {/* Sidebar */}
-        <div className={cn("absolute inset-0 z-[100] transition-all duration-300 pointer-events-none md:hidden", isSidebarOpen ? "bg-stone-900/20 backdrop-blur-sm pointer-events-auto" : "bg-transparent")} onClick={() => setIsSidebarOpen(false)}>
+        <div className={cn("absolute inset-0 z-[120] transition-all duration-300 pointer-events-none md:hidden", isSidebarOpen ? "bg-stone-900/20 backdrop-blur-sm pointer-events-auto" : "bg-transparent")} onClick={() => setIsSidebarOpen(false)}>
             <div className={cn("absolute top-0 bottom-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col pointer-events-auto rounded-r-3xl", isSidebarOpen ? "translate-x-0" : "-translate-x-full")} onClick={(e) => e.stopPropagation()}>
                 <div className="p-8 border-b border-stone-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -517,6 +517,7 @@ export function App() {
             objectives={state.objectives} 
             categoryOrder={state.categoryOrder}
             todos={state.todos}
+            allRecords={state.records}
             onAddTask={handleAddTask} 
             onUpdateTask={handleUpdateTask} 
             onDeleteTask={handleDeleteTask} 
