@@ -77,9 +77,9 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-white">
+    <div className="flex h-full bg-white relative overflow-hidden">
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative h-full pb-32 border-r border-stone-100 custom-scrollbar">
-         <div className={cn("sticky top-0 backdrop-blur-md z-20 px-3 py-2 flex justify-between items-center border-b transition-colors", isRepeatMode ? "bg-purple-50/95 border-purple-100" : "bg-white/95 border-stone-50")}>
+         <div className={cn("sticky top-0 z-20 px-3 py-2 flex justify-between items-center border-b transition-colors", isRepeatMode ? "bg-purple-50 border-purple-100" : "bg-white border-stone-50")}>
              <div className="flex items-center gap-2">
                 <span className={cn("text-[10px] font-bold tracking-wider uppercase", isRepeatMode ? "text-purple-600" : "text-primary")}>
                     {isRepeatMode ? "循环设定" : "今日日程"}
@@ -114,8 +114,8 @@ export const ScheduleView: React.FC<ScheduleViewProps> = ({
       </div>
 
       {showTaskPool && (
-        <div className="w-[180px] sm:w-[240px] md:w-[300px] bg-[#fafaf9] flex flex-col h-full shrink-0 border-l border-stone-100 animate-in slide-in-from-right duration-300">
-          <div className="p-2 z-10 sticky top-0 bg-[#fafaf9]/95 backdrop-blur border-b border-stone-100 flex justify-between items-center">
+        <div className="w-[180px] sm:w-[240px] md:w-[300px] bg-[#fafaf9] flex flex-col h-full shrink-0 border-l border-stone-100 absolute right-0 top-0 bottom-0 z-30 shadow-2xl md:static md:shadow-none animate-in slide-in-from-right">
+          <div className="p-2 z-10 sticky top-0 bg-[#fafaf9] border-b border-stone-100 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <button onClick={() => setShowTaskPool(false)} className="p-1 text-stone-400 hover:text-stone-600 transition-colors">
                 <ChevronRight size={16} />

@@ -128,10 +128,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
       }
   };
 
-  const blockClass = "bg-white px-3 py-2 rounded-lg border border-stone-100 flex items-center justify-between group hover:border-stone-200 transition-all cursor-pointer shadow-sm active:scale-[0.98] relative overflow-hidden min-h-[2.5rem]";
+  const blockClass = "bg-white px-3 py-2 rounded-lg border border-stone-100 flex items-center justify-between group hover:border-stone-200 transition-all cursor-pointer active:scale-[0.98] relative overflow-hidden min-h-[2.5rem]";
   const titleClass = "font-black text-stone-800 text-[10px] leading-tight whitespace-normal break-words text-left";
 
-  const sectionTitleClass = "text-sm font-black text-stone-900 uppercase tracking-tight leading-none";
+  const sectionTitleClass = "text-base font-black text-stone-900 uppercase tracking-tight leading-none";
   const iconContainerClass = "w-8 h-8 flex items-center justify-center rounded-lg bg-stone-100 text-stone-500 shrink-0";
 
   const renderTaskItem = (task: Task) => {
@@ -156,12 +156,12 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
             />
 
             <div className="flex items-center gap-2 relative z-10 flex-1 min-w-0 pr-2">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0 shadow-sm mt-0.5" style={{ backgroundColor: task.color }} />
+                <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: task.color }} />
                 <span className={titleClass}>{task.name}</span>
             </div>
             <div className="relative z-10 flex items-center gap-1 shrink-0 ml-1">
                 {isCompleted ? (
-                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm">
+                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
                         <Check size={8} strokeWidth={4} />
                     </div>
                 ) : dailyTarget > 0 && (
@@ -184,7 +184,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               <h3 className={sectionTitleClass}>系统设置</h3>
            </div>
 
-           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm space-y-4">
+           <div className="bg-white rounded-xl border border-stone-100 p-4 space-y-4">
               {/* Rollover Settings */}
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -204,7 +204,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                       )}
                   >
                       <div className={cn(
-                          "w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-300",
+                          "w-4 h-4 bg-white rounded-full transition-transform duration-300",
                           rolloverSettings.enabled ? "translate-x-3" : "translate-x-0"
                       )} />
                   </button>
@@ -219,7 +219,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                                   const nextDays = (rolloverSettings.maxDays % 7) + 1;
                                   onUpdateRolloverSettings({ ...rolloverSettings, maxDays: nextDays });
                               }}
-                              className="px-4 py-1.5 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black text-stone-900 active:scale-95 transition-all shadow-sm"
+                              className="px-4 py-1.5 bg-stone-100 border border-stone-200 rounded-lg text-[10px] font-black text-stone-900 active:scale-95 transition-all"
                           >
                               {rolloverSettings.maxDays} 天
                           </button>
@@ -243,7 +243,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                             key={color}
                             onClick={() => onUpdateThemeColor(color)}
                             className={cn(
-                                "w-6 h-6 rounded-full border-2 transition-all shrink-0 shadow-sm",
+                                "w-6 h-6 rounded-full border-2 transition-all shrink-0",
                                 themeColor === color ? "border-stone-900 scale-110" : "border-white hover:scale-105"
                             )}
                             style={{ backgroundColor: color }}
@@ -260,7 +260,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               <h3 className={sectionTitleClass}>数据安全</h3>
            </div>
            
-           <div className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm flex flex-col items-center gap-3">
+           <div className="bg-white rounded-xl border border-stone-100 p-4 flex flex-col items-center gap-3">
               <div className="flex items-center gap-3 w-full">
                   <div className={iconContainerClass}>
                       <Database size={18} />
@@ -276,13 +276,13 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
               <div className="w-full grid grid-cols-2 gap-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setIsBackupModalOpen(true); }}
-                    className="w-full py-3 px-3 bg-stone-50 border border-stone-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-800 hover:bg-stone-100 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+                    className="w-full py-3 px-3 bg-stone-50 border border-stone-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-stone-800 hover:bg-stone-100 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
                     <FileJson size={14} /> 备份恢复
                   </button>
                   <button 
                       onClick={() => setIsDataOverlayOpen(true)}
-                      className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all hover:opacity-90"
+                      className="w-full py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all hover:opacity-90"
                   >
                       清空记录
                   </button>
@@ -307,7 +307,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   setEditingObjective(null); 
                   setIsObjModalOpen(true); 
                 }} 
-                className="px-2 py-1.5 bg-primary text-white rounded-lg hover:opacity-90 transition-all shadow-sm active:scale-90 flex items-center gap-1"
+                className="px-2 py-1.5 bg-primary text-white rounded-lg hover:opacity-90 transition-all active:scale-90 flex items-center gap-1"
              >
                 <Plus size={12} /> <span className="text-[9px] font-bold">新分类</span>
              </button>
@@ -319,15 +319,15 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                   {sortedObjectives.map((obj, idx) => {
                     const categoryTasks = tasks.filter(t => t.category === obj.id);
                     return (
-                      <div key={obj.id} className="bg-white rounded-xl border border-stone-100 p-4 shadow-sm relative overflow-hidden group/card transition-all hover:shadow-md">
+                      <div key={obj.id} className="bg-white rounded-xl border border-stone-100 p-4 relative overflow-hidden group/card transition-all">
                         {/* Category Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div 
                                 className="flex items-center gap-3 cursor-pointer group/title select-none flex-1 min-w-0"
                                 onClick={() => { setEditingObjective(obj); setIsObjModalOpen(true); }}
                             >
-                                <div className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center shadow-inner transition-transform group-hover/title:scale-110" style={{ backgroundColor: obj.color + '20' }}>
-                                    <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: obj.color }} />
+                                <div className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-transform group-hover/title:scale-110" style={{ backgroundColor: obj.color + '20' }}>
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: obj.color }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-black text-stone-800 text-xs leading-none flex items-center gap-2 flex-wrap">
@@ -386,7 +386,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
       {/* 备份与恢复弹窗 */}
       {isBackupModalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-stone-900/60 p-4">
             <div className="bg-white rounded-[1.5rem] w-full max-w-sm flex flex-col border border-stone-300 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-5 py-4 bg-stone-50 border-b border-stone-100 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-2">
@@ -398,7 +398,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                 <div className="p-5 space-y-4">
                     <button 
                         onClick={onExportData}
-                        className="w-full py-3.5 bg-stone-900 text-white rounded-xl text-xs font-bold uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-3.5 bg-stone-900 text-white rounded-xl text-xs font-bold uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
                         <Copy size={14} /> 复制当前数据备份
                     </button>
@@ -424,7 +424,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                     <button 
                         onClick={handleImportSubmit}
                         disabled={!importText.trim()}
-                        className="w-full py-3.5 bg-white border border-stone-200 text-stone-800 rounded-xl text-xs font-bold uppercase tracking-wide shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-stone-50"
+                        className="w-full py-3.5 bg-white border border-stone-200 text-stone-800 rounded-xl text-xs font-bold uppercase tracking-wide active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-stone-50"
                     >
                         <Upload size={14} /> 恢复数据
                     </button>
@@ -435,7 +435,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
 
       {/* 清空数据确认弹窗 */}
       {isDataOverlayOpen && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-red-900/40 p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-red-900/40 p-4">
              <div className="bg-white rounded-2xl w-full max-w-xs p-6 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col items-center text-center space-y-4">
                  <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center">
                      <AlertTriangle size={24} />
@@ -453,7 +453,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({
                      </button>
                      <button 
                          onClick={() => { onClearData(); setIsDataOverlayOpen(false); }}
-                         className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-500/30"
+                         className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-bold"
                      >
                          确认清空
                      </button>

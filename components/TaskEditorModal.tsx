@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Task, TargetMode, Objective } from '../types';
 import { X, Target, Type, Trash2, Save, LayoutList, Hash, Clock, Plus, AlertCircle, Calendar, Flag } from 'lucide-react';
@@ -110,7 +109,7 @@ export const TaskEditorModal: React.FC<TaskEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4">
       <div className="bg-white rounded-2xl w-full max-w-[320px] overflow-hidden border border-stone-200 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
         <div className="flex justify-between items-center px-5 py-4 bg-stone-50 border-b border-stone-100 shrink-0">
           <div className="flex items-center gap-2">

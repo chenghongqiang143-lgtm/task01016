@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Todo, DayData, Task, Objective } from '../types';
 import { cn, formatDate } from '../utils';
@@ -80,7 +79,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           className={cn(
                               "aspect-[4/5] sm:aspect-square rounded-xl flex flex-col items-center justify-start pt-1.5 sm:pt-2 transition-all relative border",
                               isSelected 
-                                ? "bg-primary text-white border-primary shadow-lg scale-105 z-10" 
+                                ? "bg-primary text-white border-primary z-10" 
                                 : (isCurrentMonth ? "bg-white border-stone-100 text-stone-700 hover:border-stone-300" : "bg-stone-50/50 border-transparent text-stone-300")
                           )}
                       >
@@ -117,7 +116,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     getDaySummary(currentDate).todos.map(todo => {
                         const obj = objectives.find(o => o.id === todo.objectiveId);
                         return (
-                            <div key={todo.id} className="bg-white p-3 rounded-xl border border-stone-100 shadow-sm flex items-center gap-3">
+                            <div key={todo.id} className="bg-white p-3 rounded-xl border border-stone-100 flex items-center gap-3">
                                 <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                                     <CheckCircle2 size={12} strokeWidth={3} />
                                 </div>
@@ -172,7 +171,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             </span>
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all",
-                                isSelected ? "bg-primary text-white shadow-lg scale-110" : (isToday ? "bg-white text-primary border border-stone-100 shadow-sm" : "bg-white text-stone-700 border border-stone-100")
+                                isSelected ? "bg-primary text-white" : (isToday ? "bg-white text-primary border border-stone-100" : "bg-white text-stone-700 border border-stone-100")
                             )}>
                                 {format(day, 'd')}
                             </div>
@@ -182,8 +181,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         {/* Content Card */}
                         <div className="flex-1 pb-4">
                             <div className={cn(
-                                "bg-white rounded-2xl p-4 border shadow-sm space-y-3 transition-all",
-                                isSelected ? "border-primary ring-1 ring-primary shadow-md" : "border-stone-100"
+                                "bg-white rounded-2xl p-4 border space-y-3 transition-all",
+                                isSelected ? "border-primary ring-1 ring-primary" : "border-stone-100"
                             )}>
                                 {summary.completedCount === 0 && summary.recordedHours === 0 ? (
                                     <span className="text-[10px] font-bold text-stone-300 italic">无记录</span>
@@ -225,13 +224,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            <div className="flex bg-stone-100 p-0.5 rounded-xl border border-stone-200">
                <button 
                   onClick={() => setViewMode('month')}
-                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'month' ? "bg-primary text-white shadow-sm" : "text-stone-400")}
+                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'month' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
                >
                    <Calendar size={12} /> 月视图
                </button>
                <button 
                   onClick={() => setViewMode('week')}
-                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'week' ? "bg-primary text-white shadow-sm" : "text-stone-400")}
+                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'week' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
                >
                    <LayoutList size={12} /> 周视图
                </button>
@@ -244,7 +243,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                >
                    <ChevronLeft size={18} />
                </button>
-               <span className="text-xs font-black text-stone-800 w-20 text-center">
+               <span className="text-sm font-black text-stone-800 w-24 text-center">
                    {format(currentDate, viewMode === 'month' ? 'yyyy年 M月' : 'M月', { locale: zhCN })}
                    {viewMode === 'week' && <span className="text-[9px] text-stone-400 ml-1">第{format(currentDate, 'w')}周</span>}
                </span>

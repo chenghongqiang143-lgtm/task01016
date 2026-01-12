@@ -65,10 +65,10 @@ export const RecordView: React.FC<RecordViewProps> = ({
   };
 
   return (
-    <div className="flex h-full bg-white">
+    <div className="flex h-full bg-white relative overflow-hidden">
       {/* Left: Real-time Record Timeline */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white h-full pb-32 border-r border-stone-100 custom-scrollbar">
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md z-20 px-3 py-2.5 flex justify-between items-center border-b border-stone-50 shadow-sm">
+        <div className="sticky top-0 bg-white/95 z-20 px-3 py-2.5 flex justify-between items-center border-b border-stone-50 shadow-sm">
              <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold text-secondary tracking-wider uppercase">真实记录</span>
                 {selectedTaskId && <span className="text-[9px] text-secondary font-bold bg-secondary/5 px-2 py-0.5 rounded-full border border-secondary/10">点击时间轴添加</span>}
@@ -86,7 +86,6 @@ export const RecordView: React.FC<RecordViewProps> = ({
         </div>
         <div className="pt-1">
           {HOURS.map(hour => (
-            // Fix: Updated TimelineRow props to match the component's expected interface
             <TimelineRow 
               key={hour} 
               hour={hour} 
@@ -100,10 +99,10 @@ export const RecordView: React.FC<RecordViewProps> = ({
         </div>
       </div>
 
-      {/* Right: Task Pool with integrated progress background */}
+      {/* Right: Task Pool */}
       {showTaskSelection && (
-        <div className="w-[180px] sm:w-[240px] md:w-[300px] bg-[#fafaf9] flex flex-col h-full shrink-0 transition-all duration-300 border-l border-stone-100 animate-in slide-in-from-right duration-300">
-          <div className="p-2 sm:p-3 z-10 sticky top-0 bg-[#fafaf9]/95 backdrop-blur border-b border-stone-100 flex items-center justify-between">
+        <div className="w-[180px] sm:w-[240px] md:w-[300px] bg-[#fafaf9] flex flex-col h-full shrink-0 transition-transform duration-300 border-l border-stone-100 absolute right-0 top-0 bottom-0 z-30 shadow-2xl md:static md:shadow-none animate-in slide-in-from-right">
+          <div className="p-2 sm:p-3 z-10 sticky top-0 bg-[#fafaf9] border-b border-stone-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button onClick={() => setShowTaskSelection(false)} className="p-1 text-stone-400 hover:text-stone-600 transition-colors">
                 <ChevronRight size={16} />

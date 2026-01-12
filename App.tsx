@@ -3,7 +3,7 @@ import {
     ChevronLeft, ChevronRight, LayoutGrid, RotateCcw, Loader2, TrendingUp, 
     Hexagon, Plus, Menu, X, List, CalendarRange, CalendarDays, 
     CalendarCheck2, Timer, Settings2, BarChart3, PieChart, Star, Activity,
-    Calendar, Clock, Settings
+    Calendar, Clock, Settings, MessageSquareQuote
 } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -19,6 +19,7 @@ import { RatingView } from './views/RatingView';
 import { TaskStatsModal } from './components/TaskStatsModal';
 import { TodoEditorModal } from './components/TodoEditorModal';
 import { TaskPoolModal } from './components/TaskPoolModal';
+import { ReviewHistoryModal } from './components/ReviewHistoryModal';
 
 const MIN_LOADING_TIME = 800;
 const TAB_ORDER: Tab[] = ['arrange', 'record', 'calendar', 'rating', 'settings'];
@@ -29,23 +30,23 @@ function hexToRgb(hex: string): string {
 }
 
 const SideNavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
-    <button onClick={onClick} className={cn("group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ease-out border-2", active ? "bg-white text-primary border-stone-100 shadow-sm scale-110" : "text-stone-300 border-transparent hover:bg-stone-50 hover:text-stone-600")} title={label}>
+    <button onClick={onClick} className={cn("group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 ease-out border-2", active ? "bg-white text-primary border-stone-100 scale-105" : "text-stone-300 border-transparent hover:bg-stone-50 hover:text-stone-600")} title={label}>
         {React.cloneElement(icon as React.ReactElement, { strokeWidth: active ? 2.5 : 2 })}
     </button>
 );
 
 const SidebarButton = ({ icon, label, onClick, active, className }: { icon: React.ReactNode, label: string, onClick: () => void, active?: boolean, className?: string }) => (
-    <button onClick={onClick} className={cn("w-full flex items-center gap-4 px-5 py-4 rounded-2xl transition-all active:scale-[0.98] border font-black text-sm", active ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" : "bg-white text-stone-600 border-stone-100", className)}>
+    <button onClick={onClick} className={cn("w-full flex items-center gap-4 px-5 py-4 rounded-xl transition-all active:scale-[0.98] border font-bold text-sm", active ? "bg-primary text-white border-primary" : "bg-white text-stone-600 border-stone-100 hover:border-stone-200", className)}>
         {icon}
         <span>{label}</span>
     </button>
 );
 
 const NavButton = ({ active, onClick, icon, label, className }: { active: boolean, onClick: () => void, icon: React.ReactNode, label?: string, className?: string }) => (
-  <button onClick={onClick} className={cn("flex-1 flex flex-col items-center justify-center h-full relative group transition-all duration-300", active ? "text-primary scale-110" : "text-stone-400", className)}>
+  <button onClick={onClick} className={cn("flex-1 flex flex-col items-center justify-center h-full relative group transition-all duration-200", active ? "text-primary scale-105" : "text-stone-400", className)}>
     <div className="flex flex-col items-center gap-1.5">
         {React.cloneElement(icon as React.ReactElement, { strokeWidth: active ? 2.5 : 2 })}
-        {label && <span className="text-[10px] font-black leading-none uppercase tracking-widest">{label}</span>}
+        {label && <span className="text-[11px] font-black leading-none tracking-wider">{label}</span>}
     </div>
   </button>
 );
@@ -54,6 +55,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('arrange');
   const [prevTab, setPrevTab] = useState<Tab>('arrange');
   const [isAnimating, setIsAnimating] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
@@ -61,6 +63,7 @@ export function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isTaskPoolOpen, setIsTaskPoolOpen] = useState(false); 
   const [isGlobalTodoModalOpen, setIsGlobalTodoModalOpen] = useState(false);
+  const [isReviewHistoryOpen, setIsReviewHistoryOpen] = useState(false);
   const [arrangeViewMode, setArrangeViewMode] = useState<ViewMode>('list');
   
   // Rating View States
@@ -72,6 +75,9 @@ export function App() {
 
   const handleTabChange = (newTab: Tab) => {
     if (newTab === activeTab) return;
+    const oldIndex = TAB_ORDER.indexOf(activeTab);
+    const newIndex = TAB_ORDER.indexOf(newTab);
+    setSlideDirection(newIndex > oldIndex ? 'right' : 'left');
     setPrevTab(activeTab);
     setActiveTab(newTab);
     setIsAnimating(true);
@@ -411,10 +417,10 @@ export function App() {
 
   return (
     <div className="h-screen w-screen bg-[#f5f5f4] flex items-center justify-center overflow-hidden font-sans text-stone-800 p-0 sm:p-4 lg:p-6 transition-all">
-      <div className="w-full h-full sm:max-w-md md:max-w-5xl lg:max-w-6xl md:h-[94vh] bg-white sm:rounded-3xl flex flex-col md:flex-row relative shadow-soft overflow-hidden border border-stone-200">
+      <div className="w-full h-full sm:max-w-md md:max-w-5xl lg:max-w-6xl md:h-[94vh] bg-white sm:rounded-3xl flex flex-col md:flex-row relative shadow-none sm:shadow-sm sm:border border-stone-200">
         
         <nav className="hidden md:flex w-[80px] flex-col items-center py-8 bg-white border-r border-stone-100 shrink-0 z-50">
-            <div className="mb-10 p-3 bg-stone-900 text-white rounded-2xl cursor-pointer hover:scale-105 transition-transform shadow-md">
+            <div className="mb-10 p-3 bg-primary text-white rounded-2xl cursor-pointer hover:scale-105 transition-transform">
                 <Hexagon size={28} strokeWidth={2.5} />
             </div>
             <div className="flex-1 flex flex-col gap-8 w-full px-3 items-center">
@@ -455,7 +461,7 @@ export function App() {
                     
                     <div className="flex justify-end items-center">
                         {!isToday && (
-                            <button onClick={() => setCurrentDate(new Date())} className="p-2 text-stone-900 bg-stone-50 rounded-lg border border-stone-100 shadow-sm hover:bg-stone-100 active:scale-95 transition-all" title="回到今天">
+                            <button onClick={() => setCurrentDate(new Date())} className="p-2 text-stone-900 bg-stone-50 rounded-lg border border-stone-100 hover:bg-stone-100 active:scale-95 transition-all" title="回到今天">
                                 <RotateCcw size={14} />
                             </button>
                         )}
@@ -467,7 +473,7 @@ export function App() {
                      <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                         <Menu size={24} />
                     </button>
-                    <span className="ml-4 font-black text-stone-900 uppercase tracking-widest text-xs">
+                    <span className="ml-4 font-black text-stone-900 uppercase tracking-widest text-sm">
                         {activeTab === 'record' ? '时间记录' : activeTab === 'calendar' ? '数据视图' : activeTab === 'rating' ? '每日打分' : '设置'}
                     </span>
                 </header>
@@ -475,26 +481,26 @@ export function App() {
 
             <main className="flex-1 overflow-hidden relative bg-white">
                 {isAnimating && (
-                    <div className="absolute inset-0 z-10 w-full h-full bg-white animate-fade-out">
+                    <div className={cn("absolute inset-0 z-10 w-full h-full bg-white will-change-transform", slideDirection === 'right' ? "animate-slide-right-exit" : "animate-slide-left-exit")}>
                         {renderTabContent(prevTab)}
                     </div>
                 )}
-                <div className={cn("w-full h-full bg-white", isAnimating ? "animate-fade-in absolute inset-0 z-20" : "relative z-0")}>
+                <div className={cn("w-full h-full bg-white will-change-transform", isAnimating ? (slideDirection === 'right' ? "animate-slide-right-enter absolute inset-0 z-20" : "animate-slide-left-enter absolute inset-0 z-20") : "relative z-0")}>
                     {renderTabContent(activeTab)}
                 </div>
             </main>
 
             {/* Mobile Bottom Nav */}
             <div className="md:hidden fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center pointer-events-none">
-                <nav className="w-full max-w-sm pointer-events-auto h-16 flex items-center justify-around px-1 bg-white/95 backdrop-blur-xl rounded-3xl shadow-float border border-stone-100 overflow-hidden">
+                <nav className="w-full max-w-sm pointer-events-auto h-16 flex items-center justify-around px-1 bg-white/95 backdrop-blur-xl rounded-2xl border border-stone-100 overflow-hidden shadow-nav">
                      <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => handleTabChange('arrange')} icon={<Calendar size={22} />} />
                      <NavButton label="记录" active={activeTab === 'record'} onClick={() => handleTabChange('record')} icon={<Clock size={22} />} />
                      
                      <button 
                         onClick={() => setIsGlobalTodoModalOpen(true)} 
-                        className="flex-1 flex flex-col items-center justify-center h-full relative transition-all duration-300 group"
+                        className="flex-1 flex flex-col items-center justify-center h-full relative transition-all duration-200 group"
                      >
-                        <div className="w-12 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+                        <div className="w-12 h-10 bg-primary rounded-xl flex items-center justify-center active:scale-95 transition-transform">
                             <Plus size={24} strokeWidth={3} className="text-white" />
                         </div>
                      </button>
@@ -506,11 +512,11 @@ export function App() {
         </div>
 
         {/* Sidebar */}
-        <div className={cn("absolute inset-0 z-[120] transition-all duration-300 pointer-events-none md:hidden", isSidebarOpen ? "bg-stone-900/20 backdrop-blur-sm pointer-events-auto" : "bg-transparent")} onClick={() => setIsSidebarOpen(false)}>
-            <div className={cn("absolute top-0 bottom-0 left-0 w-72 bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col pointer-events-auto rounded-r-3xl", isSidebarOpen ? "translate-x-0" : "-translate-x-full")} onClick={(e) => e.stopPropagation()}>
+        <div className={cn("absolute inset-0 z-[120] transition-all duration-300 pointer-events-none md:hidden", isSidebarOpen ? "bg-stone-900/40 pointer-events-auto" : "bg-transparent")} onClick={() => setIsSidebarOpen(false)}>
+            <div className={cn("absolute top-0 bottom-0 left-0 w-72 bg-white border-r border-stone-100 transition-transform duration-300 ease-out flex flex-col pointer-events-auto", isSidebarOpen ? "translate-x-0" : "-translate-x-full")} onClick={(e) => e.stopPropagation()}>
                 <div className="p-8 border-b border-stone-50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 bg-stone-900 text-white rounded-2xl flex items-center justify-center shadow-md">
+                         <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center">
                              <Hexagon size={22} strokeWidth={2.5} />
                          </div>
                          <h2 className="font-black text-xl leading-tight uppercase tracking-tight text-stone-900">Chronos</h2>
@@ -523,6 +529,7 @@ export function App() {
                         <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">任务管理</span>
                         <SidebarButton icon={<LayoutGrid size={20} />} label="任务库" active={isTaskPoolOpen} onClick={() => handleSidebarAction(() => setIsTaskPoolOpen(true))} />
                         <SidebarButton icon={<TrendingUp size={20} />} label="数据趋势统计" onClick={() => handleSidebarAction(() => setIsTaskStatsOpen(true))} />
+                        <SidebarButton icon={<MessageSquareQuote size={20} />} label="复盘记录" active={isReviewHistoryOpen} onClick={() => handleSidebarAction(() => setIsReviewHistoryOpen(true))} />
                     </div>
                     
                     <div className="flex-1" />
@@ -563,6 +570,12 @@ export function App() {
             onSave={handleAddTodo} 
             frogCount={state.todos.filter(t => t.isFrog).length} 
             defaultDate={currentDate} 
+        />
+
+        <ReviewHistoryModal 
+            isOpen={isReviewHistoryOpen}
+            onClose={() => setIsReviewHistoryOpen(false)}
+            ratings={state.ratings}
         />
       </div>
     </div>

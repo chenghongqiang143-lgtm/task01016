@@ -131,7 +131,7 @@ export const TodoEditorModal: React.FC<TodoEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-900/60 p-4">
       <div className="bg-white rounded-3xl w-full max-w-[380px] overflow-hidden border border-stone-200 shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center px-6 py-5 bg-stone-50 border-b border-stone-100 shrink-0">
           <h3 className="font-black text-sm text-stone-800">

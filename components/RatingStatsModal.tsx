@@ -131,17 +131,6 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
       }
   };
 
-  // Get weekly reviews
-  const weeklyReviews = useMemo(() => {
-    if (range !== 'week') return [];
-    
-    return timeColumns.map(day => {
-        const key = formatDate(day);
-        const comment = ratings[key]?.comment;
-        return { date: day, comment };
-    }).filter(item => item.comment && item.comment.trim() !== '');
-  }, [range, timeColumns, ratings]);
-
   if (!isOpen) return null;
 
   return (
@@ -268,41 +257,6 @@ export const RatingStatsModal: React.FC<RatingStatsModalProps> = ({
               </div>
             </div>
           </div>
-          
-          {/* Weekly Reviews List */}
-          {range === 'week' && (
-             <div className="space-y-4 pt-2">
-                <div className="flex items-center gap-2 px-1">
-                  <MessageSquareQuote size={14} className="text-stone-300" />
-                  <h4 className="text-[10px] font-black text-stone-400 uppercase tracking-widest">本周复盘记录</h4>
-                </div>
-                
-                {weeklyReviews.length > 0 ? (
-                    <div className="space-y-3">
-                        {weeklyReviews.map((item, idx) => (
-                            <div key={idx} className="bg-white p-4 rounded-2xl border border-stone-100 shadow-sm flex gap-4">
-                                <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5 w-10 border-r border-stone-50 pr-2">
-                                    <span className="text-[9px] font-black text-stone-300 uppercase">
-                                        {format(item.date, 'EE', { locale: zhCN })}
-                                    </span>
-                                    <span className="text-xs font-black text-stone-900">
-                                        {format(item.date, 'd')}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-stone-600 font-medium leading-relaxed whitespace-pre-wrap">
-                                    {item.comment}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-8 text-center bg-stone-50/50 rounded-2xl border-2 border-dashed border-stone-100">
-                        <span className="text-[10px] font-bold text-stone-300">本周暂无复盘内容</span>
-                    </div>
-                )}
-             </div>
-          )}
-
         </div>
       </div>
     </div>

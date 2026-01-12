@@ -337,8 +337,8 @@ export const TodoView: React.FC<TodoViewProps> = ({
   const ListView = () => (
     <div className="max-w-xl mx-auto mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center justify-between mb-8">
-            <h2 className="text-[11px] font-black text-stone-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                <List size={14} strokeWidth={3} className="text-primary" /> 待办清单
+            <h2 className="text-sm font-black text-stone-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                <List size={16} strokeWidth={3} className="text-primary" /> 待办清单
             </h2>
             <button onClick={() => setHideCompleted(!hideCompleted)} className="text-[10px] font-black text-stone-400 hover:text-stone-900 transition-colors uppercase tracking-widest">
                 {hideCompleted ? "显示已完成" : "隐藏已完成"}
@@ -402,10 +402,10 @@ export const TodoView: React.FC<TodoViewProps> = ({
                                         onPointerLeave={handlePointerLeave}
                                         onContextMenu={(e) => e.preventDefault()}
                                         className={cn(
-                                            "group rounded-2xl p-4 flex flex-col gap-2 transition-all border relative overflow-hidden active:scale-[0.98] select-none touch-manipulation",
-                                            isVirtual ? "bg-stone-50 border-stone-100 opacity-60 grayscale" : "bg-white border-stone-100 shadow-soft",
-                                            t.isFrog && !isVirtual ? "border-amber-200" : "",
-                                            t.isCompleted ? "opacity-40" : ""
+                                            "group rounded-xl p-4 flex flex-col gap-2 transition-all border relative overflow-hidden active:scale-[0.99] select-none touch-manipulation",
+                                            isVirtual ? "bg-stone-50 border-stone-200 opacity-60 grayscale" : "bg-white border-stone-200 shadow-sm",
+                                            t.isFrog && !isVirtual ? "border-amber-200 ring-1 ring-amber-100" : "",
+                                            t.isCompleted ? "opacity-50" : ""
                                         )}
                                     >
                                         {!isVirtual && dailyProgress > 0 && (
@@ -417,14 +417,14 @@ export const TodoView: React.FC<TodoViewProps> = ({
 
                                         <div className="flex items-center gap-4 relative z-10">
                                             <div className={cn(
-                                                "w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all",
+                                                "w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
                                                 isVirtual ? "border-stone-200 text-stone-200" : (t.isCompleted ? "bg-stone-900 border-stone-900" : (t.isFrog ? "border-amber-400 text-amber-500" : "border-stone-200"))
                                             )}>
                                                 {isVirtual ? <Lock size={12} /> : (t.isCompleted && <Check size={14} className="text-white" strokeWidth={4} />)}
                                             </div>
                                             
                                             <div className="flex-1 min-w-0">
-                                                <h3 className={cn("text-sm font-black truncate", t.isCompleted ? "text-stone-400 line-through" : "text-stone-800")}>{t.title}</h3>
+                                                <h3 className={cn("text-sm font-bold truncate", t.isCompleted ? "text-stone-400 line-through" : "text-stone-800")}>{t.title}</h3>
                                                 <div className="flex flex-wrap items-center gap-2.5 mt-1.5">
                                                     {dailyTargetText && (
                                                         <span className="text-[9px] font-bold text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded flex items-center gap-1">
@@ -446,7 +446,7 @@ export const TodoView: React.FC<TodoViewProps> = ({
                                             </div>
                                             
                                             {!t.isCompleted && !isVirtual && (
-                                                <button onClick={(e) => handleFrogToggle(e, t)} className={cn("p-2 rounded-xl transition-all", t.isFrog ? "text-amber-500 bg-amber-100/50 shadow-inner" : "text-stone-200 hover:text-amber-400")}>
+                                                <button onClick={(e) => handleFrogToggle(e, t)} className={cn("p-2 rounded-lg transition-all", t.isFrog ? "text-amber-500 bg-amber-50" : "text-stone-200 hover:text-amber-400")}>
                                                     <Star size={18} fill={t.isFrog ? "currentColor" : "none"} />
                                                 </button>
                                             )}
@@ -494,10 +494,10 @@ export const TodoView: React.FC<TodoViewProps> = ({
         <div className="flex-1 flex flex-col min-w-0">
             {localViewMode === 'list' && (
                 <div className="bg-white px-6 pt-4 pb-3 border-b border-stone-100 shrink-0 z-10 flex justify-center">
-                    <div className="inline-flex bg-stone-50 p-1.5 rounded-2xl border border-stone-100 overflow-x-auto no-scrollbar max-w-full">
-                        <div className="flex flex-nowrap gap-1.5">
+                    <div className="inline-flex bg-stone-50 p-1 rounded-xl border border-stone-200 overflow-x-auto no-scrollbar max-w-full shadow-sm">
+                        <div className="flex flex-nowrap gap-1">
                             {filterOrder.map((range) => (
-                                <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-5 py-2.5 rounded-xl text-[10px] font-black transition-all uppercase shrink-0", activeFilter === range ? "bg-primary text-white shadow-lg" : "text-stone-400 hover:bg-white/80")}>
+                                <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold transition-all uppercase shrink-0", activeFilter === range ? "bg-white text-primary border border-stone-100" : "text-stone-400 hover:text-stone-600 border border-transparent")}>
                                     {filterLabels[range]}
                                 </button>
                             ))}
@@ -509,7 +509,7 @@ export const TodoView: React.FC<TodoViewProps> = ({
             <div className="flex-1 overflow-y-auto p-6 bg-white custom-scrollbar">
                 {localViewMode === 'list' && <ListView />}
                 {localViewMode === 'list' && filteredTodos.length === 0 && (
-                    <div className="py-24 flex flex-col items-center justify-center border-2 border-dashed border-stone-100 rounded-3xl bg-stone-50/30">
+                    <div className="py-24 flex flex-col items-center justify-center border-2 border-dashed border-stone-100 rounded-2xl bg-stone-50/30">
                         <ListTodo size={32} className="text-stone-200 mb-4" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-stone-300">暂无任务安排</span>
                     </div>
@@ -519,9 +519,9 @@ export const TodoView: React.FC<TodoViewProps> = ({
 
         {/* Side Task Pool (Desktop) */}
         <aside className="hidden md:flex flex-col w-[300px] border-l border-stone-100 bg-white shrink-0 overflow-hidden">
-            <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
-                <h3 className="text-[10px] font-black text-stone-500 uppercase tracking-widest flex items-center gap-2">
-                    <Package size={12} /> 任务库
+            <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-white">
+                <h3 className="text-xs font-black text-stone-500 uppercase tracking-widest flex items-center gap-2">
+                    <Package size={14} /> 任务库
                 </h3>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
@@ -547,7 +547,7 @@ export const TodoView: React.FC<TodoViewProps> = ({
                                         <button 
                                             key={task.id}
                                             onClick={() => handleTaskSelect(task)}
-                                            className="w-full text-left p-3 bg-stone-50/50 rounded-xl border border-stone-100 hover:border-primary/30 transition-all group active:scale-[0.98] shadow-sm flex flex-col relative overflow-hidden"
+                                            className="w-full text-left p-3 bg-white rounded-xl border border-stone-100 hover:border-primary/30 transition-all group active:scale-[0.98] flex flex-col relative overflow-hidden"
                                         >
                                             {/* Integrated Progress Background */}
                                             {hasLongTermGoal && (

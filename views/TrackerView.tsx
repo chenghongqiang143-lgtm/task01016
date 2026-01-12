@@ -42,6 +42,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
   onUpdateRecurring,
   onUpdateTask,
   onDeleteTask,
+  onAddTodo,
   currentDate,
   onEditingStatusChange
 }) => {
@@ -256,12 +257,11 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             onPointerUp={handleTaskPointerUp}
             onPointerLeave={handleTaskPointerUp}
             className={cn(
-                "px-3 py-2 rounded-xl border transition-all cursor-pointer relative shadow-sm flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[50px]",
+                "px-3 py-2 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[50px]",
                 isSelected 
-                    ? "text-white z-10" 
+                    ? "text-white z-10 border-transparent bg-primary shadow-none" 
                     : "bg-white border-stone-100 hover:border-stone-300 text-stone-700"
             )}
-            style={isSelected ? { background: `linear-gradient(135deg, ${task.color}, ${task.color}AA)` } : {}}
         >
             {!isSelected && (
                 <div 
@@ -290,9 +290,9 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   const PoolContent = () => (
     <div className="flex flex-col h-full bg-white">
-        <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/90 backdrop-blur-md z-20 shrink-0 h-10">
-            <h3 className="text-[9px] font-bold text-stone-900 uppercase tracking-widest flex items-center gap-1.5">
-                <LayoutGrid size={10} /> 任务库
+        <div className="px-3 py-2 border-b border-stone-100 flex items-center justify-between sticky top-0 bg-white/95 z-20 shrink-0 h-10">
+            <h3 className="text-xs font-bold text-stone-900 uppercase tracking-widest flex items-center gap-1.5">
+                <LayoutGrid size={12} /> 任务库
             </h3>
             <div className="flex items-center gap-2">
               {activeSide === 'plan' && (
@@ -372,7 +372,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
     return (
         <div className="flex flex-col min-h-full pb-32">
-             <div className="flex sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-stone-100 shadow-sm shrink-0">
+             <div className="flex sticky top-0 z-30 bg-white/95 border-b border-stone-100 shadow-sm shrink-0">
                  <div className="w-10 flex-shrink-0 bg-white border-r border-stone-50"></div>
                  <div className="flex-1 flex overflow-hidden">
                      {days.map(day => {
@@ -454,19 +454,19 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
   return (
     <div className="flex h-full bg-white overflow-hidden relative">
-      <aside className={cn("absolute left-0 top-0 bottom-0 w-[240px] bg-white border-r border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-float", activeSide === 'actual' ? "translate-x-0" : "-translate-x-full")}>
+      <aside className={cn("absolute left-0 top-0 bottom-0 w-[240px] bg-white border-r border-stone-200 z-[70] transition-transform duration-200 ease-out", activeSide === 'actual' ? "translate-x-0" : "-translate-x-full")}>
         <PoolContent />
       </aside>
 
-      <aside className={cn("absolute right-0 top-0 bottom-0 w-[240px] bg-white border-l border-stone-200 z-[70] transition-transform duration-500 ease-out shadow-float", activeSide === 'plan' ? "translate-x-0" : "translate-x-full")}>
+      <aside className={cn("absolute right-0 top-0 bottom-0 w-[240px] bg-white border-l border-stone-200 z-[70] transition-transform duration-200 ease-out", activeSide === 'plan' ? "translate-x-0" : "translate-x-full")}>
         <PoolContent />
       </aside>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar">
-        <div className="sticky top-0 bg-white/95 backdrop-blur-md z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
+        <div className="sticky top-0 bg-white/95 z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
             <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
                 {(['day', 'week'] as ViewMode[]).map(m => (
-                    <button key={m} onClick={() => { setViewMode(m); setActiveSide(null); }} className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1", viewMode === m ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600")}>
+                    <button key={m} onClick={() => { setViewMode(m); setActiveSide(null); }} className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1", viewMode === m ? "bg-primary text-white border border-primary" : "text-stone-400 hover:text-stone-600 border border-transparent")}>
                         {m === 'day' ? <Clock size={12} /> : <Columns size={12} />}
                         {m === 'day' ? '日' : '周'}
                     </button>
@@ -476,12 +476,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             {viewMode === 'day' && (
                 <div className="flex items-center gap-4 sm:gap-6">
                     <div className="flex items-center gap-1.5 text-stone-300">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">安排</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.2em]">安排</span>
                         <ChevronLeft size={12} />
                     </div>
                     <div className="flex items-center gap-1.5 text-stone-300">
                         <ChevronRight size={12} />
-                        <span className="text-[10px] font-bold uppercase tracking-[0.2em]">记录</span>
+                        <span className="text-xs font-bold uppercase tracking-[0.2em]">记录</span>
                     </div>
                 </div>
             )}
