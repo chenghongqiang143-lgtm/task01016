@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     ChevronLeft, ChevronRight, LayoutGrid, RotateCcw, Loader2, TrendingUp, 
     Hexagon, Plus, Menu, X, List, CalendarRange, CalendarDays, 
-    CalendarCheck2, Timer, Settings2, BarChart3, PieChart, Star, Activity
+    CalendarCheck2, Timer, Settings2, BarChart3, PieChart, Star, Activity,
+    Calendar, Clock, Settings
 } from 'lucide-react';
 import { format, addDays, subDays, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -20,6 +21,7 @@ import { TodoEditorModal } from './components/TodoEditorModal';
 import { TaskPoolModal } from './components/TaskPoolModal';
 
 const MIN_LOADING_TIME = 800;
+const TAB_ORDER: Tab[] = ['arrange', 'record', 'calendar', 'rating', 'settings'];
 
 function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -28,7 +30,7 @@ function hexToRgb(hex: string): string {
 
 const SideNavButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
     <button onClick={onClick} className={cn("group relative flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ease-out border-2", active ? "bg-white text-primary border-stone-100 shadow-sm scale-110" : "text-stone-300 border-transparent hover:bg-stone-50 hover:text-stone-600")} title={label}>
-        {icon}
+        {React.cloneElement(icon as React.ReactElement, { strokeWidth: active ? 2.5 : 2 })}
     </button>
 );
 
@@ -42,7 +44,7 @@ const SidebarButton = ({ icon, label, onClick, active, className }: { icon: Reac
 const NavButton = ({ active, onClick, icon, label, className }: { active: boolean, onClick: () => void, icon: React.ReactNode, label?: string, className?: string }) => (
   <button onClick={onClick} className={cn("flex-1 flex flex-col items-center justify-center h-full relative group transition-all duration-300", active ? "text-primary scale-110" : "text-stone-400", className)}>
     <div className="flex flex-col items-center gap-1.5">
-        {React.cloneElement(icon as React.ReactElement, { strokeWidth: 2.5 })}
+        {React.cloneElement(icon as React.ReactElement, { strokeWidth: active ? 2.5 : 2 })}
         {label && <span className="text-[10px] font-black leading-none uppercase tracking-widest">{label}</span>}
     </div>
   </button>
@@ -50,6 +52,8 @@ const NavButton = ({ active, onClick, icon, label, className }: { active: boolea
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('arrange');
+  const [prevTab, setPrevTab] = useState<Tab>('arrange');
+  const [isAnimating, setIsAnimating] = useState(false);
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
@@ -65,6 +69,14 @@ export function App() {
   
   const dateInputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<AppState | null>(null);
+
+  const handleTabChange = (newTab: Tab) => {
+    if (newTab === activeTab) return;
+    setPrevTab(activeTab);
+    setActiveTab(newTab);
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 300);
+  };
 
   const handleSidebarAction = (action: () => void) => {
     action();
@@ -273,7 +285,7 @@ export function App() {
     };
     handleAddTodo(newTodo);
     setIsTaskPoolOpen(false); // Optional: close modal after adding
-    if (activeTab !== 'arrange') setActiveTab('arrange');
+    if (activeTab !== 'arrange') handleTabChange('arrange');
   };
 
   // Rating Handlers
@@ -308,6 +320,95 @@ export function App() {
        setState(prev => prev ? ({ ...prev, reviewTemplates: (prev.reviewTemplates || []).filter(t => t.id !== id) }) : null);
   };
 
+  const renderTabContent = (tab: Tab) => {
+      switch (tab) {
+          case 'arrange':
+              return (
+                <TodoView 
+                    todos={state!.todos} objectives={state!.objectives} tasks={state!.tasks}
+                    categoryOrder={state!.categoryOrder} onAddTodo={handleAddTodo}
+                    onUpdateTodo={handleUpdateTodo} onDeleteTodo={handleDeleteTodo}
+                    onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask}
+                    isTaskPoolOpen={isTaskPoolOpen} setIsTaskPoolOpen={setIsTaskPoolOpen}
+                    currentDate={currentDate} onDateChange={setCurrentDate}
+                    scheduleData={currentSchedule} recordData={currentRecord}
+                    onUpdateSchedule={updateScheduleHour}
+                    viewMode={arrangeViewMode}
+                    onViewModeChange={setArrangeViewMode}
+                    allRecords={state!.records}
+                />
+              );
+          case 'record':
+              return (
+                <TrackerView 
+                    tasks={state!.tasks}
+                    objectives={state!.objectives}
+                    categoryOrder={state!.categoryOrder}
+                    scheduleData={currentSchedule}
+                    recordData={currentRecord}
+                    recurringSchedule={state!.recurringSchedule}
+                    allRecords={state!.records || {}}
+                    todos={state!.todos}
+                    onUpdateRecord={updateRecordHour}
+                    onUpdateSchedule={updateScheduleHour}
+                    onUpdateRecurring={updateRecurring}
+                    onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
+                    onAddTodo={handleAddTodo}
+                    currentDate={currentDate}
+                />
+              );
+          case 'calendar':
+              return (
+                <CalendarView
+                    todos={state!.todos}
+                    allRecords={state!.records || {}}
+                    tasks={state!.tasks}
+                    objectives={state!.objectives}
+                    currentDate={currentDate}
+                    onDateChange={setCurrentDate}
+                />
+              );
+          case 'rating':
+              return (
+                <RatingView 
+                    currentDate={currentDate}
+                    ratings={state!.ratings}
+                    ratingItems={state!.ratingItems}
+                    shopItems={state!.shopItems}
+                    redemptions={state!.redemptions || []}
+                    reviewTemplates={state!.reviewTemplates || []}
+                    isShopOpen={isShopOpen}
+                    onToggleShop={setIsShopOpen}
+                    onUpdateRating={handleUpdateRating}
+                    onUpdateRatingItems={handleUpdateRatingItems}
+                    onUpdateShopItems={handleUpdateShopItems}
+                    onRedeem={handleRedeem}
+                    onAddReviewTemplate={handleAddReviewTemplate}
+                    onUpdateReviewTemplate={handleUpdateReviewTemplate}
+                    onDeleteReviewTemplate={handleDeleteReviewTemplate}
+                    isStatsModalOpen={isRatingStatsOpen}
+                    onOpenStats={() => setIsRatingStatsOpen(true)}
+                    onCloseStats={() => setIsRatingStatsOpen(false)}
+                />
+              );
+          case 'settings':
+              return (
+                <SettingsTab 
+                    tasks={state!.tasks} categoryOrder={state!.categoryOrder} objectives={state!.objectives}
+                    onAddTask={handleAddTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} 
+                    onUpdateCategoryOrder={handleUpdateCategoryOrder}
+                    allRecords={state!.records || {}} currentDate={currentDate} 
+                    rolloverSettings={state!.rolloverSettings} onUpdateRolloverSettings={(s) => setState(prev => prev ? ({ ...prev, rolloverSettings: s }) : null)}
+                    onExportData={handleExportData} onImportData={handleImportData} onClearData={handleClearRecords}
+                    onAddObjective={handleAddObjective} onUpdateObjective={handleUpdateObjective} onDeleteObjective={handleDeleteObjective}
+                    themeColor={state!.themeColor} onUpdateThemeColor={(c) => setState(prev => prev ? ({ ...prev, themeColor: c }) : null)}
+                />
+              );
+          default: return null;
+      }
+  };
+
   return (
     <div className="h-screen w-screen bg-[#f5f5f4] flex items-center justify-center overflow-hidden font-sans text-stone-800 p-0 sm:p-4 lg:p-6 transition-all">
       <div className="w-full h-full sm:max-w-md md:max-w-5xl lg:max-w-6xl md:h-[94vh] bg-white sm:rounded-3xl flex flex-col md:flex-row relative shadow-soft overflow-hidden border border-stone-200">
@@ -317,13 +418,13 @@ export function App() {
                 <Hexagon size={28} strokeWidth={2.5} />
             </div>
             <div className="flex-1 flex flex-col gap-8 w-full px-3 items-center">
-                <SideNavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<CalendarCheck2 size={24} />} />
-                <SideNavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<Activity size={24} />} />
-                <SideNavButton label="视图" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} icon={<CalendarRange size={24} />} />
-                <SideNavButton label="打分" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Star size={24} />} />
+                <SideNavButton label="安排" active={activeTab === 'arrange'} onClick={() => handleTabChange('arrange')} icon={<Calendar size={24} />} />
+                <SideNavButton label="记录" active={activeTab === 'record'} onClick={() => handleTabChange('record')} icon={<Clock size={24} />} />
+                <SideNavButton label="视图" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<PieChart size={24} />} />
+                <SideNavButton label="打分" active={activeTab === 'rating'} onClick={() => handleTabChange('rating')} icon={<Star size={24} />} />
             </div>
             <div className="pb-2">
-                <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings2 size={24} />} />
+                <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} icon={<Settings size={24} />} />
             </div>
         </nav>
 
@@ -338,8 +439,8 @@ export function App() {
                     </div>
                     
                     {/* Centered Date Navigation - Using Grid Column and Flex Center */}
-                    <div className="flex justify-center items-center gap-1 sm:gap-2 relative">
-                        <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 z-20">
+                    <div className="flex justify-center items-center gap-1 sm:gap-2 relative z-20">
+                        <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 relative z-20">
                             <ChevronLeft size={18} />
                         </button>
                         <button onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()} className="relative flex flex-col items-center justify-center min-w-[80px] cursor-pointer group py-1 px-1 z-10">
@@ -347,7 +448,7 @@ export function App() {
                             <span className="text-[9px] font-bold text-stone-400 mt-0.5">{format(currentDate, 'EEEE', { locale: zhCN })}</span>
                             <input ref={dateInputRef} type="date" className="absolute inset-0 opacity-0 cursor-pointer" value={format(currentDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))} />
                         </button>
-                        <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 z-20">
+                        <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 relative z-20">
                             <ChevronRight size={18} />
                         </button>
                     </div>
@@ -372,96 +473,22 @@ export function App() {
                 </header>
             ) : null}
 
-            <main className="flex-1 overflow-hidden relative">
-            {activeTab === 'arrange' && (
-                <TodoView 
-                    todos={state.todos} objectives={state.objectives} tasks={state.tasks}
-                    categoryOrder={state.categoryOrder} onAddTodo={handleAddTodo}
-                    onUpdateTodo={handleUpdateTodo} onDeleteTodo={handleDeleteTodo}
-                    onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask}
-                    isTaskPoolOpen={isTaskPoolOpen} setIsTaskPoolOpen={setIsTaskPoolOpen}
-                    currentDate={currentDate} onDateChange={setCurrentDate}
-                    scheduleData={currentSchedule} recordData={currentRecord}
-                    onUpdateSchedule={updateScheduleHour}
-                    viewMode={arrangeViewMode}
-                    onViewModeChange={setArrangeViewMode}
-                    allRecords={state.records}
-                />
-            )}
-
-            {activeTab === 'record' && (
-                <TrackerView 
-                    tasks={state.tasks}
-                    objectives={state.objectives}
-                    categoryOrder={state.categoryOrder}
-                    scheduleData={currentSchedule}
-                    recordData={currentRecord}
-                    recurringSchedule={state.recurringSchedule}
-                    allRecords={state.records || {}}
-                    todos={state.todos}
-                    onUpdateRecord={updateRecordHour}
-                    onUpdateSchedule={updateScheduleHour}
-                    onUpdateRecurring={updateRecurring}
-                    onUpdateTask={handleUpdateTask}
-                    onDeleteTask={handleDeleteTask}
-                    onAddTodo={handleAddTodo}
-                    currentDate={currentDate}
-                />
-            )}
-
-            {activeTab === 'calendar' && (
-                <CalendarView
-                    todos={state.todos}
-                    allRecords={state.records || {}}
-                    tasks={state.tasks}
-                    objectives={state.objectives}
-                    currentDate={currentDate}
-                    onDateChange={setCurrentDate}
-                />
-            )}
-
-            {activeTab === 'rating' && (
-                <RatingView 
-                    currentDate={currentDate}
-                    ratings={state.ratings}
-                    ratingItems={state.ratingItems}
-                    shopItems={state.shopItems}
-                    redemptions={state.redemptions || []}
-                    reviewTemplates={state.reviewTemplates || []}
-                    isShopOpen={isShopOpen}
-                    onToggleShop={setIsShopOpen}
-                    onUpdateRating={handleUpdateRating}
-                    onUpdateRatingItems={handleUpdateRatingItems}
-                    onUpdateShopItems={handleUpdateShopItems}
-                    onRedeem={handleRedeem}
-                    onAddReviewTemplate={handleAddReviewTemplate}
-                    onUpdateReviewTemplate={handleUpdateReviewTemplate}
-                    onDeleteReviewTemplate={handleDeleteReviewTemplate}
-                    isStatsModalOpen={isRatingStatsOpen}
-                    onOpenStats={() => setIsRatingStatsOpen(true)}
-                    onCloseStats={() => setIsRatingStatsOpen(false)}
-                />
-            )}
-
-            {activeTab === 'settings' && (
-                <SettingsTab 
-                    tasks={state.tasks} categoryOrder={state.categoryOrder} objectives={state.objectives}
-                    onAddTask={handleAddTask} onUpdateTask={handleUpdateTask} onDeleteTask={handleDeleteTask} 
-                    onUpdateCategoryOrder={handleUpdateCategoryOrder}
-                    allRecords={state.records || {}} currentDate={currentDate} 
-                    rolloverSettings={state.rolloverSettings} onUpdateRolloverSettings={(s) => setState(prev => prev ? ({ ...prev, rolloverSettings: s }) : null)}
-                    onExportData={handleExportData} onImportData={handleImportData} onClearData={handleClearRecords}
-                    onAddObjective={handleAddObjective} onUpdateObjective={handleUpdateObjective} onDeleteObjective={handleDeleteObjective}
-                    themeColor={state.themeColor} onUpdateThemeColor={(c) => setState(prev => prev ? ({ ...prev, themeColor: c }) : null)}
-                />
-            )}
+            <main className="flex-1 overflow-hidden relative bg-white">
+                {isAnimating && (
+                    <div className="absolute inset-0 z-10 w-full h-full bg-white animate-fade-out">
+                        {renderTabContent(prevTab)}
+                    </div>
+                )}
+                <div className={cn("w-full h-full bg-white", isAnimating ? "animate-fade-in absolute inset-0 z-20" : "relative z-0")}>
+                    {renderTabContent(activeTab)}
+                </div>
             </main>
 
             {/* Mobile Bottom Nav */}
             <div className="md:hidden fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center pointer-events-none">
                 <nav className="w-full max-w-sm pointer-events-auto h-16 flex items-center justify-around px-1 bg-white/95 backdrop-blur-xl rounded-3xl shadow-float border border-stone-100 overflow-hidden">
-                     <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => setActiveTab('arrange')} icon={<CalendarCheck2 size={22} />} />
-                     <NavButton label="记录" active={activeTab === 'record'} onClick={() => setActiveTab('record')} icon={<Activity size={22} />} />
+                     <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => handleTabChange('arrange')} icon={<Calendar size={22} />} />
+                     <NavButton label="记录" active={activeTab === 'record'} onClick={() => handleTabChange('record')} icon={<Clock size={22} />} />
                      
                      <button 
                         onClick={() => setIsGlobalTodoModalOpen(true)} 
@@ -472,8 +499,8 @@ export function App() {
                         </div>
                      </button>
                      
-                     <NavButton label="视图" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} icon={<CalendarRange size={22} />} />
-                     <NavButton label="打分" active={activeTab === 'rating'} onClick={() => setActiveTab('rating')} icon={<Star size={22} />} />
+                     <NavButton label="视图" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<PieChart size={22} />} />
+                     <NavButton label="打分" active={activeTab === 'rating'} onClick={() => handleTabChange('rating')} icon={<Star size={22} />} />
                 </nav>
             </div>
         </div>
@@ -501,7 +528,7 @@ export function App() {
                     <div className="flex-1" />
                     
                     <div className="space-y-4">
-                        <SidebarButton icon={<Settings2 size={20} />} label="系统设置" active={activeTab === 'settings'} onClick={() => handleSidebarAction(() => setActiveTab('settings'))} />
+                        <SidebarButton icon={<Settings size={20} />} label="系统设置" active={activeTab === 'settings'} onClick={() => handleSidebarAction(() => handleTabChange('settings'))} />
                     </div>
                 </div>
             </div>
