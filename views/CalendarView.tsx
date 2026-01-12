@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Todo, DayData, Task, Objective } from '../types';
 import { cn, formatDate } from '../utils';
@@ -226,13 +227,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   onClick={() => setViewMode('month')}
                   className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'month' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
                >
-                   <Calendar size={12} /> 月视图
+                   <Calendar size={12} /> 月
                </button>
                <button 
                   onClick={() => setViewMode('week')}
                   className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'week' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
                >
-                   <LayoutList size={12} /> 周视图
+                   <LayoutList size={12} /> 周
                </button>
            </div>
 

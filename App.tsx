@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     ChevronLeft, ChevronRight, LayoutGrid, RotateCcw, Loader2, TrendingUp, 
@@ -437,9 +438,9 @@ export function App() {
         <div className="flex-1 flex flex-col h-full min-w-0 relative bg-white">
             {/* Conditional Header based on activeTab */}
             {activeTab === 'arrange' ? (
-                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 grid grid-cols-[60px_1fr_60px] items-center px-2 border-b border-stone-50">
+                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 grid grid-cols-[60px_1fr_60px] items-center px-4 border-b border-stone-50">
                     <div className="flex justify-start">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
+                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                             <Menu size={24} />
                         </button>
                     </div>
@@ -461,7 +462,7 @@ export function App() {
                     
                     <div className="flex justify-end items-center">
                         {!isToday && (
-                            <button onClick={() => setCurrentDate(new Date())} className="p-2 text-stone-900 bg-stone-50 rounded-lg border border-stone-100 hover:bg-stone-100 active:scale-95 transition-all" title="回到今天">
+                            <button onClick={() => setCurrentDate(new Date())} className="p-2 -mr-1 text-stone-900 bg-stone-50 rounded-lg border border-stone-100 hover:bg-stone-100 active:scale-95 transition-all" title="回到今天">
                                 <RotateCcw size={14} />
                             </button>
                         )}
