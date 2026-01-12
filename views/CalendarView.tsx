@@ -106,7 +106,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            </div>
         </div>
 
-        {/* Selected Day Detail - Removed its own overflow to scroll with the grid */}
+        {/* Selected Day Detail */}
         <div className="flex-1 bg-stone-50 border-t border-stone-100 p-6 pb-40">
             <h3 className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <CalendarDays size={12} /> {format(currentDate, 'M月d日')} 概览
@@ -123,7 +123,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="text-xs font-bold text-stone-800 truncate">{todo.title}</h4>
-                                    <div className="flex items-center gap-2 mt-0.5">
+                                    <div className="flex items-center gap-1 mt-0.5">
                                         <div className="flex items-center gap-1">
                                             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: obj?.color || '#ccc' }} />
                                             <span className="text-[9px] text-stone-400">{obj?.title || '未分类'}</span>
@@ -151,7 +151,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
     return (
       <div className="flex flex-col h-full bg-stone-50 animate-in slide-in-from-right-4 duration-300">
-         {/* Added pb-32 to prevent bottom navigation bar overlap */}
          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40 custom-scrollbar">
             {weekDays.map(day => {
                 const isToday = isSameDay(day, new Date());
@@ -165,10 +164,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         onClick={() => onDateChange(day)}
                         className={cn("flex gap-3 cursor-pointer", !hasContent && !isToday && !isSelected && "opacity-60")}
                     >
-                        {/* Date Column */}
                         <div className="flex flex-col items-center w-12 shrink-0 pt-1">
                             <span className={cn("text-[9px] font-black uppercase mb-0.5", isToday ? "text-primary" : "text-stone-400")}>
-                                {format(day, 'EEE', { locale: zhCN })}
+                                {format(day, 'EEE', { locale: zhCN }).replace('周', '')}
                             </span>
                             <div className={cn(
                                 "w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all",
@@ -179,7 +177,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             {hasContent && <div className="w-0.5 h-full bg-stone-200 mt-2 -mb-4 rounded-full" />}
                         </div>
 
-                        {/* Content Card */}
                         <div className="flex-1 pb-4">
                             <div className={cn(
                                 "bg-white rounded-2xl p-4 border space-y-3 transition-all",
@@ -220,18 +217,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-stone-50">
-       {/* Header */}
        <div className="px-4 py-3 bg-white border-b border-stone-100 flex justify-between items-center shrink-0">
-           <div className="flex bg-stone-100 p-0.5 rounded-xl border border-stone-200">
+           <div className="inline-flex bg-stone-50/50 p-1 rounded-xl">
                <button 
                   onClick={() => setViewMode('month')}
-                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'month' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
+                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 shrink-0", viewMode === 'month' ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600")}
                >
                    <Calendar size={12} /> 月
                </button>
                <button 
                   onClick={() => setViewMode('week')}
-                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5", viewMode === 'week' ? "bg-primary text-white border border-primary" : "text-stone-400 border border-transparent")}
+                  className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 shrink-0", viewMode === 'week' ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600")}
                >
                    <LayoutList size={12} /> 周
                </button>
@@ -246,7 +242,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                </button>
                <span className="text-sm font-black text-stone-800 w-24 text-center">
                    {format(currentDate, viewMode === 'month' ? 'yyyy年 M月' : 'M月', { locale: zhCN })}
-                   {viewMode === 'week' && <span className="text-[9px] text-stone-400 ml-1">第{format(currentDate, 'w')}周</span>}
                </span>
                <button 
                    onClick={() => onDateChange(viewMode === 'month' ? addMonths(currentDate, 1) : addWeeks(currentDate, 1))}
@@ -257,7 +252,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
            </div>
        </div>
 
-       {/* Content */}
        <div className="flex-1 overflow-hidden">
            {viewMode === 'month' ? renderMonthView() : renderWeekView()}
        </div>

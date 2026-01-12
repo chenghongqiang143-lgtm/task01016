@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Todo, Objective, Task, ViewMode, HOURS, DayData } from '../types';
 import { TodoEditorModal } from '../components/TodoEditorModal';
@@ -494,10 +495,19 @@ export const TodoView: React.FC<TodoViewProps> = ({
         <div className="flex-1 flex flex-col min-w-0">
             {localViewMode === 'list' && (
                 <div className="bg-white px-6 pt-4 pb-3 border-b border-stone-100 shrink-0 z-10 flex justify-center">
-                    <div className="inline-flex bg-stone-50 p-1 rounded-xl border border-stone-200 overflow-x-auto no-scrollbar max-w-full shadow-sm">
+                    <div className="inline-flex bg-stone-50/50 p-1 rounded-xl overflow-x-auto no-scrollbar max-w-full">
                         <div className="flex flex-nowrap gap-1">
                             {filterOrder.map((range) => (
-                                <button key={range} onClick={() => setActiveFilter(range)} className={cn("px-4 py-2 rounded-lg text-[10px] font-bold transition-all uppercase shrink-0", activeFilter === range ? "bg-white text-primary border border-stone-100" : "text-stone-400 hover:text-stone-600 border border-transparent")}>
+                                <button 
+                                    key={range} 
+                                    onClick={() => setActiveFilter(range)} 
+                                    className={cn(
+                                        "px-4 py-2 rounded-lg text-[10px] font-bold transition-all uppercase shrink-0",
+                                        activeFilter === range 
+                                            ? "bg-primary text-white shadow-sm" 
+                                            : "text-stone-400 hover:text-stone-600 border border-transparent"
+                                    )}
+                                >
                                     {filterLabels[range]}
                                 </button>
                             ))}

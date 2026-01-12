@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useLayoutEffect, useMemo, useEffect } from 'react';
 import { Task, DayData, HOURS, Objective, Todo } from '../types';
 import { TimelineRow } from '../components/TimelineRow';
@@ -108,7 +109,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
     tasks.forEach(t => stats[t.id] = { todayActual: 0, totalActual: 0 });
     
-    // 汇总所有历史记录
     Object.entries(allRecords).forEach(([dateStr, record]) => {
       const dayData = record as DayData;
       if (!dayData || !dayData.hours) return;
@@ -132,7 +132,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
       });
     });
 
-    // 从已完成 Todo 补充累计值
     todos.forEach(t => {
         if (t.isCompleted && t.templateId && stats[t.templateId]) {
             const task = tasks.find(tk => tk.id === t.templateId);
@@ -219,8 +218,15 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     }
   };
 
+  const handleTaskPointerLeave = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
   const isTaskInActiveSlot = (taskId: string) => {
-      if (!activeSide || selectedHours.size === 0) return false;
+      if (!activeSide || selectedHours.size === 0) false;
       const isRecurring = activeSide === 'plan' && isRecurringMode;
       const targetDataMap = activeSide === 'actual' ? recordData.hours : (isRecurring ? recurringSchedule : scheduleData.hours);
       return Array.from(selectedHours).every((h: number) => (targetDataMap[h] || []).includes(taskId));
@@ -242,7 +248,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
     const hasLongTermGoal = target?.totalValue && target.totalValue > 0;
     const totalGoal = target?.totalValue;
 
-    // 优先显示长期目标进度，如果存在
     const progressPercent = hasLongTermGoal 
       ? Math.min((totalActual / (totalGoal || 1)) * 100, 100)
       : (dailyTarget > 0 ? Math.min((todayActual / dailyTarget) * 100, 100) : 0);
@@ -254,8 +259,8 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             key={task.id}
             onClick={() => handleToggleTaskInSlot(task.id)}
             onPointerDown={() => handleTaskPointerDown(task)}
-            onPointerUp={handleTaskPointerUp}
-            onPointerLeave={handleTaskPointerUp}
+            onPointerUp={handleTaskPointerUp} // Fix: Removed task argument as handleTaskPointerUp expects 0 arguments
+            onPointerLeave={handleTaskPointerLeave}
             className={cn(
                 "px-3 py-2 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-center overflow-hidden active:scale-95 select-none touch-manipulation min-h-[50px]",
                 isSelected 
@@ -344,7 +349,6 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                             </div>
                         );
                     })}
-                    {/* Others/Uncategorized */}
                     {tasks.filter(t => !t.category || !categoryOrder.includes(t.category)).length > 0 && (
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 px-1">
@@ -388,7 +392,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
                  </div>
              </div>
 
-             <div className="flex flex-1">
+             <div className="flex-1 flex">
                   <div className="w-10 flex-shrink-0 bg-white border-r border-stone-100 z-10">
                       {HOURS.map(h => (
                           <div key={h} className="h-9 flex items-center justify-center text-[9px] font-mono text-stone-300 border-b border-stone-50">
@@ -464,9 +468,9 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative bg-white custom-scrollbar">
         <div className="sticky top-0 bg-white/95 z-40 px-4 py-2 border-b border-stone-100 flex items-center justify-between h-12">
-            <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+            <div className="inline-flex bg-stone-50/50 p-1 rounded-xl">
                 {(['day', 'week'] as ViewMode[]).map(m => (
-                    <button key={m} onClick={() => { setViewMode(m); setActiveSide(null); }} className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all flex items-center gap-1", viewMode === m ? "bg-primary text-white border border-primary" : "text-stone-400 hover:text-stone-600 border border-transparent")}>
+                    <button key={m} onClick={() => { setViewMode(m); setActiveSide(null); }} className={cn("px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1 shrink-0", viewMode === m ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600")}>
                         {m === 'day' ? <Clock size={12} /> : <Columns size={12} />}
                         {m === 'day' ? '日' : '周'}
                     </button>
@@ -476,12 +480,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({
             {viewMode === 'day' && (
                 <div className="flex items-center gap-4 sm:gap-6">
                     <div className="flex items-center gap-1.5 text-stone-300">
-                        <span className="text-xs font-bold uppercase tracking-[0.2em]">安排</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">安排</span>
                         <ChevronLeft size={12} />
                     </div>
                     <div className="flex items-center gap-1.5 text-stone-300">
                         <ChevronRight size={12} />
-                        <span className="text-xs font-bold uppercase tracking-[0.2em]">记录</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">记录</span>
                     </div>
                 </div>
             )}

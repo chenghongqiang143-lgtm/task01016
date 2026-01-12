@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { DayRating } from '../types';
 import { X, MessageSquareQuote, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
@@ -97,18 +98,24 @@ export const ReviewHistoryModal: React.FC<ReviewHistoryModalProps> = ({
 
         {/* Filters & Navigation */}
         <div className="px-6 py-3 bg-white border-b border-stone-50 flex items-center justify-between shrink-0">
-             <div className="flex bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+             <div className="inline-flex bg-stone-50/50 p-1 rounded-xl">
                 <button 
                   onClick={() => setViewMode('week')}
-                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", viewMode === 'week' ? "bg-white text-primary shadow-sm" : "text-stone-400 hover:text-stone-600")}
+                  className={cn(
+                    "px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 shrink-0", 
+                    viewMode === 'week' ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600"
+                  )}
                 >
-                  按周查看
+                  周
                 </button>
                 <button 
                   onClick={() => setViewMode('month')}
-                  className={cn("px-3 py-1 text-[10px] font-black rounded-md transition-all", viewMode === 'month' ? "bg-white text-primary shadow-sm" : "text-stone-400 hover:text-stone-600")}
+                  className={cn(
+                    "px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-1.5 shrink-0", 
+                    viewMode === 'month' ? "bg-primary text-white shadow-sm" : "text-stone-400 hover:text-stone-600"
+                  )}
                 >
-                  按月查看
+                  月
                 </button>
             </div>
 

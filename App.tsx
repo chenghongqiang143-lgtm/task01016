@@ -23,7 +23,7 @@ import { TaskPoolModal } from './components/TaskPoolModal';
 import { ReviewHistoryModal } from './components/ReviewHistoryModal';
 
 const MIN_LOADING_TIME = 800;
-const TAB_ORDER: Tab[] = ['arrange', 'record', 'calendar', 'rating', 'settings'];
+const TAB_ORDER: Tab[] = ['arrange', 'calendar', 'record', 'rating'];
 
 function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -76,8 +76,8 @@ export function App() {
 
   const handleTabChange = (newTab: Tab) => {
     if (newTab === activeTab) return;
-    const oldIndex = TAB_ORDER.indexOf(activeTab);
-    const newIndex = TAB_ORDER.indexOf(newTab);
+    const oldIndex = TAB_ORDER.includes(activeTab) ? TAB_ORDER.indexOf(activeTab) : 99;
+    const newIndex = TAB_ORDER.includes(newTab) ? TAB_ORDER.indexOf(newTab) : 99;
     setSlideDirection(newIndex > oldIndex ? 'right' : 'left');
     setPrevTab(activeTab);
     setActiveTab(newTab);
@@ -161,7 +161,7 @@ export function App() {
   if (!state || !isLoaded) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-stone-50 space-y-4 font-sans text-stone-400">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="spinner"></div>
         <span className="text-xs font-black uppercase tracking-[0.2em]">Chronos Loading</span>
       </div>
     );
@@ -191,7 +191,6 @@ export function App() {
         let updatedTasks = prev.tasks;
         let processedTodo = { ...todo };
 
-        // Automatically create a habit (task template) if the new todo has a frequency (recurring) or a long-term goal but no template
         const hasFrequency = processedTodo.targets?.frequency && processedTodo.targets.frequency > 0;
         const hasLongTermGoal = processedTodo.targets?.totalValue && processedTodo.targets.totalValue > 0;
 
@@ -226,11 +225,6 @@ export function App() {
   const handleUpdateObjective = (updated: Objective) => setState(prev => prev ? ({ ...prev, objectives: prev.objectives.map(o => o.id === updated.id ? updated : o) }) : null);
   const handleDeleteObjective = (id: string) => setState(prev => prev ? ({ ...prev, objectives: prev.objectives.filter(o => o.id !== id) }) : null);
   const handleUpdateCategoryOrder = (order: string[]) => setState(prev => prev ? ({ ...prev, categoryOrder: order }) : null);
-
-  // Memo Handlers
-  const handleAddMemo = (memo: MemoItem) => setState(prev => prev ? ({ ...prev, memoItems: [memo, ...(prev.memoItems || [])] }) : null);
-  const handleUpdateMemo = (memo: MemoItem) => setState(prev => prev ? ({ ...prev, memoItems: (prev.memoItems || []).map(m => m.id === memo.id ? memo : m) }) : null);
-  const handleDeleteMemo = (id: string) => setState(prev => prev ? ({ ...prev, memoItems: (prev.memoItems || []).filter(m => m.id !== id) }) : null);
 
   const updateScheduleHour = (hour: number, taskIds: string[]) => {
     setState(prev => {
@@ -276,7 +270,6 @@ export function App() {
       }) : null);
   };
 
-  // Handler for adding a task from the task pool to the current day
   const handleTaskPoolSelect = (task: Task) => {
     const newTodo: Todo = {
       id: generateId(),
@@ -287,15 +280,14 @@ export function App() {
       isCompleted: false,
       subTasks: [],
       createdAt: new Date().toISOString(),
-      startDate: formatDate(currentDate), // Add to currently selected date
+      startDate: formatDate(currentDate),
       targets: task.targets
     };
     handleAddTodo(newTodo);
-    setIsTaskPoolOpen(false); // Optional: close modal after adding
+    setIsTaskPoolOpen(false);
     if (activeTab !== 'arrange') handleTabChange('arrange');
   };
 
-  // Rating Handlers
   const handleUpdateRating = (dKey: string, rating: DayRating) => {
       setState(prev => prev ? ({ ...prev, ratings: { ...prev.ratings, [dKey]: rating } }) : null);
   };
@@ -426,26 +418,24 @@ export function App() {
             </div>
             <div className="flex-1 flex flex-col gap-8 w-full px-3 items-center">
                 <SideNavButton label="安排" active={activeTab === 'arrange'} onClick={() => handleTabChange('arrange')} icon={<Calendar size={24} />} />
+                <SideNavButton label="统计" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<BarChart3 size={24} />} />
                 <SideNavButton label="记录" active={activeTab === 'record'} onClick={() => handleTabChange('record')} icon={<Clock size={24} />} />
-                <SideNavButton label="视图" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<PieChart size={24} />} />
                 <SideNavButton label="打分" active={activeTab === 'rating'} onClick={() => handleTabChange('rating')} icon={<Star size={24} />} />
             </div>
             <div className="pb-2">
-                <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} icon={<Settings size={24} />} />
+                 <SideNavButton label="设置" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} icon={<Settings size={24} />} />
             </div>
         </nav>
 
         <div className="flex-1 flex flex-col h-full min-w-0 relative bg-white">
-            {/* Conditional Header based on activeTab */}
-            {activeTab === 'arrange' ? (
-                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 grid grid-cols-[60px_1fr_60px] items-center px-4 border-b border-stone-50">
+            {activeTab === 'arrange' || activeTab === 'calendar' ? (
+                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 grid grid-cols-[60px_1fr_60px] items-center px-6 border-b border-stone-50">
                     <div className="flex justify-start">
                         <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                             <Menu size={24} />
                         </button>
                     </div>
                     
-                    {/* Centered Date Navigation - Using Grid Column and Flex Center */}
                     <div className="flex justify-center items-center gap-1 sm:gap-2 relative z-20">
                         <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-50 rounded-lg transition-all active:scale-90 relative z-20">
                             <ChevronLeft size={18} />
@@ -468,17 +458,16 @@ export function App() {
                         )}
                     </div>
                 </header>
-            ) : activeTab === 'record' || activeTab === 'calendar' || activeTab === 'rating' || activeTab === 'settings' ? (
-                // Simple Header for other tabs mostly handled internally or just sidebar toggle
-                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 flex items-center px-4 border-b border-stone-50 md:hidden">
+            ) : (
+                <header className="bg-white z-[110] shrink-0 pt-[env(safe-area-inset-top)] sticky top-0 h-16 flex items-center px-6 border-b border-stone-50 md:hidden">
                      <button onClick={() => setIsSidebarOpen(true)} className="p-2.5 -ml-2 text-stone-900 hover:bg-stone-50 rounded-xl transition-colors">
                         <Menu size={24} />
                     </button>
                     <span className="ml-4 font-black text-stone-900 uppercase tracking-widest text-sm">
-                        {activeTab === 'record' ? '时间记录' : activeTab === 'calendar' ? '数据视图' : activeTab === 'rating' ? '每日打分' : '设置'}
+                        {activeTab === 'record' ? '时间记录' : activeTab === 'rating' ? '自律打分' : activeTab === 'settings' ? '系统设置' : '其他功能'}
                     </span>
                 </header>
-            ) : null}
+            )}
 
             <main className="flex-1 overflow-hidden relative bg-white">
                 {isAnimating && (
@@ -491,28 +480,25 @@ export function App() {
                 </div>
             </main>
 
-            {/* Mobile Bottom Nav */}
-            <div className="md:hidden fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center pointer-events-none">
+            <div className="md:hidden fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 flex justify-center pointer-events-none">
                 <nav className="w-full max-w-sm pointer-events-auto h-16 flex items-center justify-around px-1 bg-white/95 backdrop-blur-xl rounded-2xl border border-stone-100 overflow-hidden shadow-nav">
                      <NavButton label="安排" active={activeTab === 'arrange'} onClick={() => handleTabChange('arrange')} icon={<Calendar size={22} />} />
+                     <NavButton label="统计" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<BarChart3 size={22} />} />
                      <NavButton label="记录" active={activeTab === 'record'} onClick={() => handleTabChange('record')} icon={<Clock size={22} />} />
-                     
-                     <button 
-                        onClick={() => setIsGlobalTodoModalOpen(true)} 
-                        className="flex-1 flex flex-col items-center justify-center h-full relative transition-all duration-200 group"
-                     >
-                        <div className="w-12 h-10 bg-primary rounded-xl flex items-center justify-center active:scale-95 transition-transform">
-                            <Plus size={24} strokeWidth={3} className="text-white" />
-                        </div>
-                     </button>
-                     
-                     <NavButton label="视图" active={activeTab === 'calendar'} onClick={() => handleTabChange('calendar')} icon={<PieChart size={22} />} />
                      <NavButton label="打分" active={activeTab === 'rating'} onClick={() => handleTabChange('rating')} icon={<Star size={22} />} />
                 </nav>
             </div>
+            
+            <div className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 pointer-events-auto">
+                <button 
+                    onClick={() => setIsGlobalTodoModalOpen(true)}
+                    className="w-12 h-12 bg-primary text-white rounded-full shadow-float flex items-center justify-center active:scale-95 transition-all hover:scale-105"
+                >
+                    <Plus size={24} strokeWidth={3} />
+                </button>
+            </div>
         </div>
 
-        {/* Sidebar */}
         <div className={cn("absolute inset-0 z-[120] transition-all duration-300 pointer-events-none md:hidden", isSidebarOpen ? "bg-stone-900/40 pointer-events-auto" : "bg-transparent")} onClick={() => setIsSidebarOpen(false)}>
             <div className={cn("absolute top-0 bottom-0 left-0 w-72 bg-white border-r border-stone-100 transition-transform duration-300 ease-out flex flex-col pointer-events-auto", isSidebarOpen ? "translate-x-0" : "-translate-x-full")} onClick={(e) => e.stopPropagation()}>
                 <div className="p-8 border-b border-stone-50 flex items-center justify-between">
@@ -527,10 +513,11 @@ export function App() {
                 
                 <div className="p-6 flex-1 overflow-y-auto space-y-8 flex flex-col">
                     <div className="space-y-4">
-                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">任务管理</span>
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest px-1">功能模块</span>
                         <SidebarButton icon={<LayoutGrid size={20} />} label="任务库" active={isTaskPoolOpen} onClick={() => handleSidebarAction(() => setIsTaskPoolOpen(true))} />
-                        <SidebarButton icon={<TrendingUp size={20} />} label="数据趋势统计" onClick={() => handleSidebarAction(() => setIsTaskStatsOpen(true))} />
-                        <SidebarButton icon={<MessageSquareQuote size={20} />} label="复盘记录" active={isReviewHistoryOpen} onClick={() => handleSidebarAction(() => setIsReviewHistoryOpen(true))} />
+                        <SidebarButton icon={<TrendingUp size={20} />} label="历史趋势统计" onClick={() => handleSidebarAction(() => setIsTaskStatsOpen(true))} />
+                        <SidebarButton icon={<MessageSquareQuote size={20} />} label="复盘周报" active={isReviewHistoryOpen} onClick={() => handleSidebarAction(() => setIsReviewHistoryOpen(true))} />
+                        <SidebarButton icon={<Star size={20} />} label="自律打分" active={activeTab === 'rating'} onClick={() => handleSidebarAction(() => handleTabChange('rating'))} />
                     </div>
                     
                     <div className="flex-1" />
@@ -542,7 +529,6 @@ export function App() {
             </div>
         </div>
 
-        {/* Modals */}
         {isTaskStatsOpen && <TaskStatsModal isOpen={true} onClose={() => setIsTaskStatsOpen(false)} todos={state.todos} objectives={state.objectives} currentDate={currentDate} />}
         
         <TaskPoolModal 
